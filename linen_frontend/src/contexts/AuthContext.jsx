@@ -22,7 +22,6 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (!user || !token) return;
-
   }, [user, token]);
 
   const login = async (username, password) => {
@@ -49,10 +48,10 @@ export const AuthProvider = ({ children }) => {
       const profile = await profileRes.json();
       setUser(profile.data);
 
-      if (!profile.data.isVerified) {
+      if (profile.data.verify === 0) {
         navigate("/profile");
       } else {
-        navigate("/requests");
+        navigate("/linen-stock");
       }
     } catch (err) {
       throw err;

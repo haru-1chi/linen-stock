@@ -7,19 +7,38 @@ import {
   Routes,
 } from "react-router-dom";
 import "./App.css";
-import { useState } from "react";
 import Login from "./pages/Login";
 import { AuthProvider } from "./contexts/AuthContext";
+import ProtectedRoute from "./contexts/ProtectedRoute";
 import Home from "./pages/Home";
+import Profile from "./pages/Profile";
+import LinenStockPage from "./pages/LinenStockPage";
+import Layout from "./contexts/Layout";
 function App() {
-  const [count, setCount] = useState(0);
-
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
+          <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/requests" element={<Home />} />
+          <Route element={<Layout />}>
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/linen-stock"
+              element={
+                <ProtectedRoute>
+                  <LinenStockPage />
+                </ProtectedRoute>
+              }
+            />
+          </Route>
         </Routes>
       </AuthProvider>
     </BrowserRouter>

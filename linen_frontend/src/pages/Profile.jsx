@@ -23,12 +23,12 @@ import {
   faMagnifyingGlass,
 } from "@fortawesome/free-solid-svg-icons";
 //   import Footer from "../components/Footer";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "../contexts/AuthContext";
 
 function Profile() {
   const API_BASE = useMemo(
     () => import.meta.env.VITE_REACT_APP_API || "http://localhost:3000/api",
-    []
+    [],
   );
   const { user, setUser, token, setToken } = useAuth();
 
@@ -92,7 +92,7 @@ function Profile() {
         },
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       showToast("success", "สำเร็จ", res.data.message);
@@ -148,7 +148,7 @@ function Profile() {
         },
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       showToast("success", "สำเร็จ", res.data.message);
@@ -163,7 +163,7 @@ function Profile() {
         ...prev,
         username: res.data.data.username,
         name: res.data.data.name,
-        isVerified: res.data.data.isVerified,
+        verify: res.data.data.verify,
       }));
       setFormCreateAccount({
         firstname: "",
@@ -204,7 +204,7 @@ function Profile() {
         },
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       const data = res.data;
@@ -251,7 +251,7 @@ function Profile() {
           <h5 className="text-2xl font-semibold">บัญชีของฉัน</h5>
         </div>
         <div className="card max-w-125 bg-white p-5 rounded-xl shadow-md">
-          {!user.isVerified && (
+          {user.verify === 0 && (
             <div className="mb-4">
               <Message
                 severity="warn"
@@ -262,7 +262,7 @@ function Profile() {
           )}
           <div className="flex justify-between items-center">
             <p className="text-xl font-semibold">ข้อมูลส่วนตัว</p>
-            {user.isVerified &&
+            {user.verify === 1 &&
               (!isEditMode ? (
                 <Button
                   onClick={handleToggleEdit}
@@ -297,7 +297,7 @@ function Profile() {
               ))}
           </div>
 
-          {!user.isVerified ? (
+          {user.verify === 0 ? (
             <>
               <div className="mt-4 grid grid-cols-4 items-center">
                 <p>ชื่อ - สกุล</p>
@@ -442,7 +442,7 @@ function Profile() {
               </div>
             </>
           )}
-          {!user.isVerified ? (
+          {user.verify === 0 ? (
             <>
               <div className="grid grid-cols-4 mt-8 items-center">
                 <p>รหัสผ่าน</p>

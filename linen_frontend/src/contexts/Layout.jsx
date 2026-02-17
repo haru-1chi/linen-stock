@@ -1,7 +1,7 @@
 // Layout.jsx
 import React, { useState } from "react";
 import SideBarMenu from "../components/SideBarMenu";
-import BottomNavbar from "../components/BottomNavbar";
+// import BottomNavbar from "../components/BottomNavbar";
 import { Outlet } from "react-router-dom";
 // import { useAuth } from "./AuthContext";
 
@@ -24,7 +24,7 @@ function Layout() {
       >
         <Outlet />
       </div>
-      <BottomNavbar />
+      {/* <BottomNavbar /> */}
     </div>
   );
 }

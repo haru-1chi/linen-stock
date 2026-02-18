@@ -5,7 +5,7 @@ import { Toast } from "primereact/toast";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
-import StockFormDialog from "../components/StockFormDialog";
+import LinenItemsFormDialog from "../components/LinenItemsFormDialog";
 import axios from "axios";
 import axiosInstance, { setAuthErrorInterceptor } from "../utils/axiosInstance";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -21,11 +21,11 @@ import {
 const API_BASE =
   import.meta.env.VITE_REACT_APP_API || "http://localhost:3000/api";
 
-function LinenStockPage() {
+function LinenItemsPage() {
   const token = localStorage.getItem("token"); //แก้ให้ถูกหลัก
   const toast = useRef(null);
 
-  const [stock, setStock] = useState([]);
+  const [linenItems, setLinenItems] = useState([]);
   const [linenItemsActive, setLinenItemsActive] = useState([]);
   const [dialogVisible, setDialogVisible] = useState(false);
 
@@ -41,18 +41,19 @@ function LinenStockPage() {
     });
   };
 
-  const fetchStock = useCallback(async () => {
+  const fetchLinenItems = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_BASE}/stock/linen-stock`);
-      setStock(res.data);
+      const res = await axios.get(`${API_BASE}/stock/linen-item`);
+      console.log(res);
+      setLinenItems(res.data);
     } catch (err) {
       showToast("error", "ผิดพลาด", "ไม่สามารถดึงข้อมูลได้");
       console.error(err);
     }
   }, []);
   useEffect(() => {
-    fetchStock();
-  }, [fetchStock]);
+    fetchLinenItems();
+  }, [fetchLinenItems]);
 
   useEffect(() => {
     const fetchLinenItems = async () => {
@@ -78,26 +79,13 @@ function LinenStockPage() {
   }, [showToast]);
 
   //add
-  const [rows, setRows] = useState([
-    {
-      id: 1,
-      linen_id: null,
-      remain: "",
-      unit: "",
-      note: "",
-      stock_type: "new",
-    },
-  ]);
+  const [rows, setRows] = useState([{ linen_name: "" }]);
 
   const resetRows = useCallback(() => {
     setRows([
       {
         id: 1,
-        linen_id: null,
-        remain: "",
-        unit: "",
-        note: "",
-        stock_type: "new",
+        linen_name: "",
       },
     ]);
   }, []);
@@ -130,45 +118,31 @@ function LinenStockPage() {
 
   const submitRows = useCallback(async () => {
     try {
-      if (
-        rows.some(
-          (r) => !r.linen_id || r.remain === "" || r.remain === null || !r.unit,
-        )
-      ) {
-        showToast("error", "ผิดพลาด", "กรุณากรอกข้อมูลให้ครบ");
-        return;
-      }
-
-      if (rows.length === 0) {
-        showToast("error", "ผิดพลาด", "กรุณาเพิ่มข้อมูลอย่างน้อย 1 แถว");
+      if (rows.some((r) => !r.linen_name?.trim())) {
+        showToast("error", "ผิดพลาด", "กรุณากรอกชื่อผ้าให้ครบ");
         return;
       }
 
       const payload = rows.map((r) => ({
-        linen_id: r.linen_id,
-        stock_type: "new",
-        remain: Number(r.remain),
-        unit: r.unit,
-        note: r.note || null,
+        linen_name: r.linen_name.trim(),
       }));
 
-      await axiosInstance.post(`${API_BASE}/stock/linen-stock`, payload, {
+      await axiosInstance.post(`${API_BASE}/stock/linen-item`, payload, {
         headers: { token },
       });
 
-      showToast("success", "สำเร็จ", "เพิ่มข้อมูลเรียบร้อยแล้ว");
-      fetchStock();
-      resetRows();
+      showToast("success", "สำเร็จ", "เพิ่มรายการผ้าเรียบร้อยแล้ว");
+      fetchLinenItems();
+      setRows([{ linen_name: "" }]);
       setDialogVisible(false);
     } catch (err) {
-      console.error(err);
       showToast(
         "error",
         "ผิดพลาด",
-        err.response?.data?.message || "บันทึกข้อมูลล้มเหลว",
+        err.response?.data?.message || "บันทึกล้มเหลว",
       );
     }
-  }, [rows, API_BASE, token, showToast, resetRows, setDialogVisible]);
+  }, [rows, token, fetchLinenItems]);
 
   const dialogFooterTemplate = (
     <div className="flex justify-end border-t pt-3 border-gray-300">
@@ -177,59 +151,30 @@ function LinenStockPage() {
   );
 
   //edit
-  const startEditRow = useCallback((row) => {
-    setEditRowId(row.id);
-    setEditRowData({ ...row });
-  }, []);
-
-  const cancelEdit = useCallback(() => {
-    setEditRowId(null);
-    setEditRowData({});
-  }, []);
-
   const onRowEditComplete = (e) => {
     const { newData, index } = e;
 
     confirmDialog({
-      message: "คุณต้องการบันทึกการแก้ไขนี้ใช่หรือไม่?",
-      header: "ยืนยันการบันทึก",
+      message: "ต้องการบันทึกการแก้ไขหรือไม่?",
+      header: "ยืนยัน",
       icon: "pi pi-exclamation-triangle",
-      acceptLabel: "บันทึก",
-      rejectLabel: "ยกเลิก",
-      acceptClassName: "p-button-success",
-      rejectClassName: "p-button-secondary",
 
       accept: async () => {
         try {
-          const payload = {
-            id: newData.id,
-            linen_id: newData.linen_id,
-            stock_type: newData.stock_type,
-            remain: Number(newData.remain),
-            unit: newData.unit,
-            note: newData.note || null,
-          };
-
-          await axiosInstance.put(`${API_BASE}/stock/linen-stock`, [payload], {
-            headers: { token },
-          });
-
-          const _stock = [...stock];
-          _stock[index] = newData;
-          setStock(_stock);
-
-          showToast("success", "สำเร็จ", "อัปเดตข้อมูลเรียบร้อยแล้ว");
-        } catch (err) {
-          showToast(
-            "error",
-            "ผิดพลาด",
-            err.response?.data?.message || "การอัปเดตล้มเหลว",
+          await axiosInstance.put(
+            `${API_BASE}/stock/linen-item`,
+            [{ id: newData.id, linen_name: newData.linen_name }],
+            { headers: { token } },
           );
-        }
-      },
 
-      reject: () => {
-        showToast("info", "ยกเลิก", "ยกเลิกการบันทึกแล้ว");
+          const updated = [...linenItems];
+          updated[index] = newData;
+          setLinenItems(updated);
+
+          showToast("success", "สำเร็จ", "แก้ไขเรียบร้อยแล้ว");
+        } catch (err) {
+          showToast("error", "ผิดพลาด", err.response?.data?.message);
+        }
       },
     });
   };
@@ -243,58 +188,15 @@ function LinenStockPage() {
     />
   );
 
-  const unitEditor = (options) => (
-    <InputText
-      value={options.value ?? ""}
-      onChange={(e) => options.editorCallback(e.target.value)}
-      className="w-full"
-    />
-  );
-
-  const noteEditor = (options) => (
-    <InputText
-      value={options.value ?? ""}
-      onChange={(e) => options.editorCallback(e.target.value)}
-      className="w-full"
-    />
-  );
-
-  const renderActionCell = (row) =>
-    editRowId === row.id ? (
-      <div className="flex justify-center gap-2">
-        <Button
-          rounded
-          icon={<FontAwesomeIcon icon={faCheck} />}
-          className="p-button-success p-button-sm"
-          onClick={confirmSaveRow}
-        />
-        <Button
-          rounded
-          icon={<FontAwesomeIcon icon={faXmark} />}
-          className="p-button-secondary p-button-sm"
-          onClick={cancelEdit}
-        />
-      </div>
-    ) : (
-      <Button
-        rounded
-        icon={<FontAwesomeIcon icon={faEdit} />}
-        className="p-button-warning p-button-sm"
-        onClick={() => {
-          startEditRow(row);
-        }}
-      />
-    );
-
   //delete
   const handleDelete = useCallback(
     async (id) => {
       try {
-        await axiosInstance.delete(`${API_BASE}/stock/linen-stock/${id}`, {
+        await axiosInstance.delete(`${API_BASE}/stock/linen-item/${id}`, {
           headers: { token },
         });
 
-        setStock((prev) => prev.filter((row) => row.id !== id));
+        setLinenItems((prev) => prev.filter((row) => row.id !== id));
         // await fetchKpiData(selectedKpi);
         showToast("success", "สำเร็จ", "ลบข้อมูลเรียบร้อยแล้ว");
       } catch (err) {
@@ -339,7 +241,7 @@ function LinenStockPage() {
         className={`flex-1 transition-all duration-300 p-4 sm:p-8 pt-5 overflow-auto`}
       >
         <div className="flex justify-between items-center mb-3">
-          <h5 className="text-2xl font-semibold">คลังสต๊อคผ้า</h5>
+          <h5 className="text-2xl font-semibold">รายชื่อผ้า</h5>
           <div className="flex justify-between gap-3">
             <Button
               label="+ เพิ่มข้อมูลผ้า"
@@ -353,7 +255,7 @@ function LinenStockPage() {
           dataKey="id"
           editMode="row"
           onRowEditComplete={onRowEditComplete}
-          value={stock}
+          value={linenItems}
           tableStyle={{ minWidth: "50rem" }}
           emptyMessage="ไม่พบข้อมูล"
           paginator
@@ -368,12 +270,12 @@ function LinenStockPage() {
             align="center"
             sortable
           />
-          <Column field="linen_name" header="ชื่อรายการ" sortable />
-          <Column field="remain" header="คงเหลือ" editor={remainEditor} />
-
-          <Column field="unit" header="หน่วย" editor={unitEditor} />
-
-          <Column field="note" header="หมายเหตุ" editor={noteEditor} />
+          <Column
+            field="linen_name"
+            header="ชื่อรายการ"
+            editor={remainEditor}
+            sortable
+          />
 
           <Column
             rowEditor
@@ -388,7 +290,7 @@ function LinenStockPage() {
           />
         </DataTable>
       </div>
-      <StockFormDialog
+      <LinenItemsFormDialog
         dialogVisible={dialogVisible}
         setDialogVisible={() => setDialogVisible(false)}
         rows={rows}
@@ -402,4 +304,4 @@ function LinenStockPage() {
   );
 }
 
-export default LinenStockPage;
+export default LinenItemsPage;

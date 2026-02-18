@@ -13,6 +13,7 @@ import ProtectedRoute from "./contexts/ProtectedRoute";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
 import LinenStockPage from "./pages/LinenStockPage";
+import LinenItemsPage from "./pages/LinenItemsPage";
 import Layout from "./contexts/Layout";
 function App() {
   return (
@@ -35,6 +36,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <LinenStockPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/linen-item"
+              element={
+                <ProtectedRoute>
+                  <LinenItemsPage />
                 </ProtectedRoute>
               }
             />

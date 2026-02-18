@@ -79,8 +79,8 @@ exports.updateLinenItem = async (req, res) => {
             UPDATE linen_items
             SET
                 ${fields
-                    .map((f) => `${f} = CASE id ${cases[f].join(" ")} END`)
-                    .join(", ")},
+                .map((f) => `${f} = CASE id ${cases[f].join(" ")} END`)
+                .join(", ")},
                 updated_by = ?,
                 updated_at = NOW()
             WHERE id IN (${ids.map(() => "?").join(",")})
@@ -137,7 +137,7 @@ exports.getLinenItem = async (req, res) => {
                     WHEN l.deleted_at IS NOT NULL 
                     THEN CONCAT(l.linen_name, ' (inactive)')
                     ELSE l.linen_name
-                END AS name,
+                END AS linen_name,
                 l.created_by,
                 l.created_at,
                 l.updated_by,
@@ -162,6 +162,50 @@ exports.getLinenItem = async (req, res) => {
     }
 };
 
+exports.deleteLinenItem = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: "ID is required",
+            });
+        }
+
+        const sql = `
+      UPDATE linen_items
+      SET deleted_at = NOW()
+      WHERE id = ?
+        AND deleted_at IS NULL
+    `;
+
+        const [result] = await db.query(sql, [id]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Linen item not found or already deleted",
+            });
+        }
+
+        return res.json({
+            success: true,
+            message: "Linen item soft deleted successfully",
+            affectedRows: result.affectedRows,
+        });
+
+    } catch (err) {
+        console.error("❌ Error soft deleting linen item:", err);
+        return res.status(500).json({
+            success: false,
+            message: "Database error",
+            error: err.message,
+        });
+    }
+};
+
+//stock
 exports.createStock = async (req, res) => {
     try {
         const dataArray = req.body;
@@ -215,6 +259,143 @@ exports.createStock = async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Failed to insert stock data",
+            error: err.message,
+        });
+    }
+};
+
+exports.updateStock = async (req, res) => {
+    const rows = req.body;
+
+    // 1️⃣ Allow only single record
+    if (!Array.isArray(rows) || rows.length !== 1) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid request. Expected a single row.",
+        });
+    }
+
+    const row = rows[0];
+    const { id, linen_id, stock_type, remain, unit, note } = row;
+
+    if (!id || !linen_id || !stock_type || remain == null || !unit) {
+        return res.status(400).json({
+            success: false,
+            message: "กรุณากรอกข้อมูลให้ครบ",
+        });
+    }
+
+    try {
+        // 2️⃣ Duplicate check (same linen + stock_type but different id)
+        const dupSQL = `
+  SELECT id
+  FROM stock
+  WHERE linen_id = ?
+    AND stock_type = ?
+    AND (
+          (note IS NULL AND ? IS NULL)
+          OR note = ?
+        )
+    AND id != ?
+  LIMIT 1
+`;
+
+        const [dup] = await db.query(dupSQL, [
+            linen_id,
+            stock_type,
+            note || null,
+            note || null,
+            id,
+        ]);
+
+        if (dup.length > 0) {
+            return res.status(409).json({
+                success: false,
+                message: "มีข้อมูลซ้ำ (ชนิดผ้า + ประเภทสต๊อก + หมายเหตุ ซ้ำกัน)",
+            });
+        }
+
+
+        // 3️⃣ Update
+        const updateSQL = `
+      UPDATE stock
+      SET
+        linen_id = ?,
+        stock_type = ?,
+        remain = ?,
+        unit = ?,
+        note = ?,
+        updated_by = ?,
+        updated_at = NOW()
+      WHERE id = ?
+      LIMIT 1
+    `;
+
+        const updatedBy = req.user?.name || "Unknown User";
+
+        await db.query(updateSQL, [
+            linen_id,
+            stock_type,
+            Number(remain),
+            unit,
+            note || null,
+            updatedBy,
+            id,
+        ]);
+
+
+        return res.json({
+            success: true,
+            message: "อัปเดตสต๊อกสำเร็จ",
+        });
+
+    } catch (err) {
+        console.error("❌ updateStock Error:", err);
+        return res.status(500).json({
+            success: false,
+            message: "เกิดข้อผิดพลาดระหว่างอัปเดตข้อมูล",
+        });
+    }
+};
+
+exports.deleteStock = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: "ID is required",
+            });
+        }
+
+        const sql = `
+      UPDATE stock
+      SET deleted_at = NOW()
+      WHERE id = ? 
+        AND deleted_at IS NULL
+    `;
+
+        const [result] = await db.query(sql, [id]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Record not found or already deleted",
+            });
+        }
+
+        return res.json({
+            success: true,
+            message: "Stock soft deleted successfully",
+            affectedRows: result.affectedRows,
+        });
+
+    } catch (err) {
+        console.error("❌ Error soft deleting stock:", err);
+        return res.status(500).json({
+            success: false,
+            message: "Database error",
             error: err.message,
         });
     }

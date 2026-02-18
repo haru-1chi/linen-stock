@@ -11,6 +11,7 @@ import {
   faBed,
   faLanguage,
   faUserPen,
+  faChartColumn 
 } from "@fortawesome/free-solid-svg-icons";
 import { Button } from "primereact/button";
 import { Link, useLocation } from "react-router-dom";
@@ -31,7 +32,7 @@ function SideBarMenu({ collapsed, setCollapsed }) {
         <div className="flex justify-between items-center mb-4 pl-4 pr-2">
           <div className="flex items-center ">
             <h5 className="text-2xl font-bold bg-linear-to-r from-indigo-600 to-cyan-500 bg-clip-text text-transparent tracking-tighter">
-              Talk Well
+             ระบบสต๊อคผ้า
             </h5>
           </div>
 

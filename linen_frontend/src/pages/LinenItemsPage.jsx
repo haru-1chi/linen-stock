@@ -29,9 +29,6 @@ function LinenItemsPage() {
   const [linenItemsActive, setLinenItemsActive] = useState([]);
   const [dialogVisible, setDialogVisible] = useState(false);
 
-  const [editRowId, setEditRowId] = useState(null);
-  const [editRowData, setEditRowData] = useState({});
-
   const showToast = (severity, summary, detail) => {
     toast.current?.show({
       severity,
@@ -79,13 +76,24 @@ function LinenItemsPage() {
   }, [showToast]);
 
   //add
-  const [rows, setRows] = useState([{ linen_name: "" }]);
+  const [rows, setRows] = useState([
+    {
+      code: "",
+      linen_name: "",
+      unit: "",
+      default_order_quantity: "",
+      price: "",
+    },
+  ]);
 
   const resetRows = useCallback(() => {
     setRows([
       {
-        id: 1,
+        code: "",
         linen_name: "",
+        unit: "",
+        default_order_quantity: "",
+        price: "",
       },
     ]);
   }, []);
@@ -99,10 +107,11 @@ function LinenItemsPage() {
       ...prev,
       {
         id: prev.length + 1,
+        code: "",
         linen_id: null,
-        remain: "",
         unit: "",
-        note: "",
+        default_order_quantity: "",
+        price: "",
         stock_type: "new",
       },
     ]);
@@ -118,13 +127,21 @@ function LinenItemsPage() {
 
   const submitRows = useCallback(async () => {
     try {
-      if (rows.some((r) => !r.linen_name?.trim())) {
+      if (
+        rows.some(
+          (r) => !r.code?.trim() || !r.linen_name?.trim() || !r.unit?.trim(),
+        )
+      ) {
         showToast("error", "ผิดพลาด", "กรุณากรอกชื่อผ้าให้ครบ");
         return;
       }
 
       const payload = rows.map((r) => ({
-        linen_name: r.linen_name.trim(),
+        code: r.code?.trim(),
+        linen_name: r.linen_name?.trim(),
+        unit: r.unit?.trim(),
+        default_order_quantity: Number(r.default_order_quantity) || 0,
+        price: Number(r.price) || 0,
       }));
 
       await axiosInstance.post(`${API_BASE}/stock/linen-item`, payload, {
@@ -133,7 +150,7 @@ function LinenItemsPage() {
 
       showToast("success", "สำเร็จ", "เพิ่มรายการผ้าเรียบร้อยแล้ว");
       fetchLinenItems();
-      setRows([{ linen_name: "" }]);
+      resetRows();
       setDialogVisible(false);
     } catch (err) {
       showToast(
@@ -163,7 +180,16 @@ function LinenItemsPage() {
         try {
           await axiosInstance.put(
             `${API_BASE}/stock/linen-item`,
-            [{ id: newData.id, linen_name: newData.linen_name }],
+            [
+              {
+                id: newData.id,
+                code: newData.code,
+                linen_name: newData.linen_name,
+                unit: newData.unit,
+                default_order_quantity: newData.default_order_quantity,
+                price: newData.price,
+              },
+            ],
             { headers: { token } },
           );
 
@@ -179,7 +205,7 @@ function LinenItemsPage() {
     });
   };
 
-  const remainEditor = (options) => (
+  const linenNameEditor = (options) => (
     <InputText
       value={options.value ?? ""}
       onChange={(e) => options.editorCallback(e.target.value)}
@@ -263,20 +289,35 @@ function LinenItemsPage() {
           rowsPerPageOptions={[10, 25, 50]}
           showGridlines
         >
-          <Column
-            header="ลำดับ"
-            style={{ width: "5%" }}
-            body={(rowData, { rowIndex }) => rowIndex + 1}
-            align="center"
-            sortable
-          />
+          <Column field="code" header="ED" sortable />
+
           <Column
             field="linen_name"
             header="ชื่อรายการ"
-            editor={remainEditor}
+            editor={linenNameEditor}
             sortable
           />
 
+          <Column
+            field="unit"
+            header="หน่วย"
+            editor={linenNameEditor}
+            sortable
+          />
+
+          <Column
+            field="default_order_quantity"
+            header="จำนวนสั่ง(ค่าเริ่มต้น)"
+            editor={linenNameEditor}
+            sortable
+          />
+
+          <Column
+            field="price"
+            header="ราคา(ต่อหน่วย)"
+            editor={linenNameEditor}
+            sortable
+          />
           <Column
             rowEditor
             headerStyle={{ width: "8rem" }}

@@ -64,9 +64,9 @@ function SideBarMenu({ collapsed, setCollapsed }) {
         {user?.verify === 1 && (
           <>
             <Link
-              to="/"
+              to="/manageStock"
               className={`p-3 rounded-lg block mb-3 ${
-                isActive("/")
+                isActive("/manageStock")
                   ? "text-white font-bold bg-teal-500"
                   : "text-gray-700 hover:text-teal-500"
               }`}

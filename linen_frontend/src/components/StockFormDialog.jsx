@@ -36,10 +36,14 @@ export default function StockFormDialog({
         size="small"
       >
         <Column
-          header="ลำดับ"
-          body={(_, opt) => opt.rowIndex + 1}
-          style={{ width: "50px" }}
-          align="center"
+          header="รหัส ED"
+          body={(row) => {
+            const selected = dropdownOptions.find(
+              (opt) => opt.value === row.linen_id,
+            );
+
+            return <p>{selected?.code || ""}</p>;
+          }}
         />
 
         <Column
@@ -50,9 +54,19 @@ export default function StockFormDialog({
             <Dropdown
               value={row.linen_id}
               options={dropdownOptions}
-              onChange={(e) =>
-                handleInputChange(opt.rowIndex, "linen_id", e.value)
-              }
+              onChange={(e) => {
+                const selected = dropdownOptions.find(
+                  (optItem) => optItem.value === e.value,
+                );
+
+                handleInputChange(opt.rowIndex, "linen_id", e.value);
+
+                if (selected) {
+                  handleInputChange(opt.rowIndex, "unit", selected.unit);
+                } else {
+                  handleInputChange(opt.rowIndex, "unit", "");
+                }
+              }}
               placeholder="เลือกรายการผ้า"
               className="w-full"
               filter
@@ -80,15 +94,12 @@ export default function StockFormDialog({
         <Column
           field="unit"
           header="หน่วย"
-          body={(row, opt) => (
-            <InputText
-              value={row.unit}
-              onChange={(e) =>
-                handleInputChange(opt.rowIndex, "unit", e.target.value)
-              }
-              className="w-full"
-            />
+          body={(row) => (
+            <p>
+              {row.unit || "-"}
+            </p>
           )}
+          style={{ width: "120px" }}
         />
         <Column
           field="note"

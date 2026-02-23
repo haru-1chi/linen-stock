@@ -36,6 +36,21 @@ export default function LinenItemsFormDialog({
           align="center"
         />
 
+        {/* CODE */}
+        <Column
+          header="ED"
+          body={(row, opt) => (
+            <InputText
+              value={row.code}
+              onChange={(e) =>
+                handleInputChange(opt.rowIndex, "code", e.target.value)
+              }
+              className="w-full"
+            />
+          )}
+        />
+
+        {/* NAME */}
         <Column
           header="ชื่อผ้า"
           body={(row, opt) => (
@@ -43,6 +58,48 @@ export default function LinenItemsFormDialog({
               value={row.linen_name}
               onChange={(e) =>
                 handleInputChange(opt.rowIndex, "linen_name", e.target.value)
+              }
+              className="w-full"
+            />
+          )}
+        />
+
+        {/* UNIT */}
+        <Column
+          header="หน่วย"
+          body={(row, opt) => (
+            <InputText
+              value={row.unit}
+              onChange={(e) =>
+                handleInputChange(opt.rowIndex, "unit", e.target.value)
+              }
+              className="w-full"
+            />
+          )}
+        />
+
+        {/* default_order_quantity */}
+        <Column
+          header="จำนวน(ค่าเริ่มต้น)"
+          body={(row, opt) => (
+            <InputText
+              value={row.default_order_quantity}
+              onChange={(e) =>
+                handleInputChange(opt.rowIndex, "default_order_quantity", e.target.value)
+              }
+              className="w-full"
+            />
+          )}
+        />
+
+        {/* PRICE */}
+        <Column
+          header="ราคา(ต่อหน่วย)"
+          body={(row, opt) => (
+            <InputText
+              value={row.price}
+              onChange={(e) =>
+                handleInputChange(opt.rowIndex, "price", e.target.value)
               }
               className="w-full"
             />

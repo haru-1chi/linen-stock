@@ -29,9 +29,6 @@ function LinenStockPage() {
   const [linenItemsActive, setLinenItemsActive] = useState([]);
   const [dialogVisible, setDialogVisible] = useState(false);
 
-  const [editRowId, setEditRowId] = useState(null);
-  const [editRowData, setEditRowData] = useState({});
-
   const showToast = (severity, summary, detail) => {
     toast.current?.show({
       severity,
@@ -62,8 +59,10 @@ function LinenStockPage() {
         });
 
         const options = res.data.map((item) => ({
-          label: item.name, // ← from backend alias
+          label: item.linen_name, // ← from backend alias
           value: item.id,
+          unit: item.unit,
+          code: item.code,
           deleted: item.deleted_at !== null,
         }));
 
@@ -75,7 +74,7 @@ function LinenStockPage() {
     };
 
     fetchLinenItems();
-  }, [showToast]);
+  }, []);
 
   //add
   const [rows, setRows] = useState([
@@ -132,7 +131,7 @@ function LinenStockPage() {
     try {
       if (
         rows.some(
-          (r) => !r.linen_id || r.remain === "" || r.remain === null || !r.unit,
+          (r) => !r.linen_id || r.remain === "" || r.remain === null,
         )
       ) {
         showToast("error", "ผิดพลาด", "กรุณากรอกข้อมูลให้ครบ");
@@ -148,7 +147,6 @@ function LinenStockPage() {
         linen_id: r.linen_id,
         stock_type: "new",
         remain: Number(r.remain),
-        unit: r.unit,
         note: r.note || null,
       }));
 
@@ -177,16 +175,6 @@ function LinenStockPage() {
   );
 
   //edit
-  const startEditRow = useCallback((row) => {
-    setEditRowId(row.id);
-    setEditRowData({ ...row });
-  }, []);
-
-  const cancelEdit = useCallback(() => {
-    setEditRowId(null);
-    setEditRowData({});
-  }, []);
-
   const onRowEditComplete = (e) => {
     const { newData, index } = e;
 
@@ -206,7 +194,6 @@ function LinenStockPage() {
             linen_id: newData.linen_id,
             stock_type: newData.stock_type,
             remain: Number(newData.remain),
-            unit: newData.unit,
             note: newData.note || null,
           };
 
@@ -243,14 +230,6 @@ function LinenStockPage() {
     />
   );
 
-  const unitEditor = (options) => (
-    <InputText
-      value={options.value ?? ""}
-      onChange={(e) => options.editorCallback(e.target.value)}
-      className="w-full"
-    />
-  );
-
   const noteEditor = (options) => (
     <InputText
       value={options.value ?? ""}
@@ -258,33 +237,6 @@ function LinenStockPage() {
       className="w-full"
     />
   );
-
-  const renderActionCell = (row) =>
-    editRowId === row.id ? (
-      <div className="flex justify-center gap-2">
-        <Button
-          rounded
-          icon={<FontAwesomeIcon icon={faCheck} />}
-          className="p-button-success p-button-sm"
-          onClick={confirmSaveRow}
-        />
-        <Button
-          rounded
-          icon={<FontAwesomeIcon icon={faXmark} />}
-          className="p-button-secondary p-button-sm"
-          onClick={cancelEdit}
-        />
-      </div>
-    ) : (
-      <Button
-        rounded
-        icon={<FontAwesomeIcon icon={faEdit} />}
-        className="p-button-warning p-button-sm"
-        onClick={() => {
-          startEditRow(row);
-        }}
-      />
-    );
 
   //delete
   const handleDelete = useCallback(
@@ -361,21 +313,17 @@ function LinenStockPage() {
           rowsPerPageOptions={[10, 25, 50]}
           showGridlines
         >
-          <Column
-            header="ลำดับ"
-            style={{ width: "5%" }}
-            body={(rowData, { rowIndex }) => rowIndex + 1}
-            align="center"
-            sortable
-          />
+          <Column field="code" header="รหัส ED" sortable />
           <Column field="linen_name" header="ชื่อรายการ" sortable />
           <Column field="remain" header="คงเหลือ" editor={remainEditor} />
 
-          <Column field="unit" header="หน่วย" editor={unitEditor} />
+          <Column field="unit" header="หน่วย" />
 
           <Column field="note" header="หมายเหตุ" editor={noteEditor} />
 
           <Column
+            header="แก้ไข"
+            align="center"
             rowEditor
             headerStyle={{ width: "8rem" }}
             bodyStyle={{ textAlign: "center" }}

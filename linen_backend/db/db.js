@@ -12,6 +12,11 @@ async function query(sql, params = []) {
   }
 }
 
+async function getConnection() {
+  return await pool.getConnection();
+}
+
 module.exports = {
   query,
+  getConnection, // ✅ เพิ่มอันนี้
 };

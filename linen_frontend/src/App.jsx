@@ -15,6 +15,8 @@ import Profile from "./pages/Profile";
 import LinenStockPage from "./pages/LinenStockPage";
 import LinenItemsPage from "./pages/LinenItemsPage";
 import Layout from "./contexts/Layout";
+import ManageStock from "./pages/ManageStock";
+
 function App() {
   return (
     <BrowserRouter>
@@ -28,6 +30,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/manageStock"
+              element={
+                <ProtectedRoute>
+                  <ManageStock />
                 </ProtectedRoute>
               }
             />

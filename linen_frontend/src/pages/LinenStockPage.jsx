@@ -26,6 +26,7 @@ function LinenStockPage() {
   const toast = useRef(null);
 
   const [stock, setStock] = useState([]);
+
   const [linenItemsActive, setLinenItemsActive] = useState([]);
   const [dialogVisible, setDialogVisible] = useState(false);
 
@@ -77,28 +78,21 @@ function LinenStockPage() {
   }, []);
 
   //add
-  const [rows, setRows] = useState([
-    {
-      id: 1,
-      linen_id: null,
-      remain: "",
-      unit: "",
-      note: "",
-      stock_type: "new",
-    },
-  ]);
+  const initialRow = {
+    code: "",
+    linen_id: null,
+    linen_name: "",
+    remain: "",
+    price: "",
+    unit: "",
+    default_order_quantity: "",
+    note: "",
+  };
+
+  const [rows, setRows] = useState([initialRow]);
 
   const resetRows = useCallback(() => {
-    setRows([
-      {
-        id: 1,
-        linen_id: null,
-        remain: "",
-        unit: "",
-        note: "",
-        stock_type: "new",
-      },
-    ]);
+    setRows([initialRow]);
   }, []);
 
   const removeRow = useCallback((rowIndex) => {
@@ -106,17 +100,7 @@ function LinenStockPage() {
   }, []);
 
   const addRow = useCallback(() => {
-    setRows((prev) => [
-      ...prev,
-      {
-        id: prev.length + 1,
-        linen_id: null,
-        remain: "",
-        unit: "",
-        note: "",
-        stock_type: "new",
-      },
-    ]);
+    setRows((prev) => [...prev, initialRow]);
   }, []);
 
   const handleInputChange = useCallback((rowIndex, field, value) => {
@@ -131,7 +115,10 @@ function LinenStockPage() {
     try {
       if (
         rows.some(
-          (r) => !r.linen_id || r.remain === "" || r.remain === null,
+          (r) =>
+            (!r.linen_id && !r.linen_name) ||
+            r.remain === "" ||
+            r.remain === null,
         )
       ) {
         showToast("error", "ผิดพลาด", "กรุณากรอกข้อมูลให้ครบ");
@@ -145,6 +132,11 @@ function LinenStockPage() {
 
       const payload = rows.map((r) => ({
         linen_id: r.linen_id,
+        linen_name: r.linen_name,
+        code: r.code,
+        unit: r.unit,
+        default_order_quantity: r.default_order_quantity,
+        price: r.price,
         stock_type: "new",
         remain: Number(r.remain),
         note: r.note || null,
@@ -193,7 +185,6 @@ function LinenStockPage() {
             id: newData.id,
             linen_id: newData.linen_id,
             stock_type: newData.stock_type,
-            remain: Number(newData.remain),
             note: newData.note || null,
           };
 
@@ -315,7 +306,7 @@ function LinenStockPage() {
         >
           <Column field="code" header="รหัส ED" sortable />
           <Column field="linen_name" header="ชื่อรายการ" sortable />
-          <Column field="remain" header="คงเหลือ" editor={remainEditor} />
+          <Column field="remain" header="คงเหลือ" sortable />
 
           <Column field="unit" header="หน่วย" />
 

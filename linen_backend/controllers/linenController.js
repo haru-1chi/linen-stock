@@ -261,57 +261,144 @@ exports.deleteLinenItem = async (req, res) => {
     }
 };
 
+exports.searchLinenItems = async (req, res) => {
+    try {
+        const q = (req.query.q || "").trim();
+        const includeDeleted = req.query.includeDeleted === "true";
+
+        let conditions = [];
+        let params = [];
+
+        // soft delete
+        if (!includeDeleted) {
+            conditions.push("li.deleted_at IS NULL");
+        }
+
+        // search condition
+        if (q) {
+            conditions.push("(li.code LIKE ? OR li.linen_name LIKE ?)");
+            params.push(`%${q}%`, `%${q}%`);
+        }
+
+        const where =
+            conditions.length > 0
+                ? "WHERE " + conditions.join(" AND ")
+                : "";
+
+        const sql = `
+      SELECT
+        li.id,
+        li.code,
+        li.linen_name,
+        li.unit,
+        li.default_order_quantity,
+        li.price
+      FROM linen_items li
+      ${where}
+      ORDER BY li.linen_name ASC
+      LIMIT 10
+    `;
+
+        const [rows] = await db.query(sql, params);
+
+        res.status(200).json({
+            success: true,
+            data: rows || [],
+        });
+
+    } catch (err) {
+        console.error("❌ Error searching linen items:", err);
+        res.status(500).json({
+            success: false,
+            message: "Failed to search linen items",
+            error: err.message,
+        });
+    }
+};
+
 //stock
 exports.createStock = async (req, res) => {
+    const connection = await db.getConnection();
+    await connection.beginTransaction();
+
+    let lastLinenId = null; // 👈 เก็บไว้ตรงนี้
+
     try {
         const dataArray = req.body;
         const userName = req.user?.name || "Unknown User";
 
-        if (!Array.isArray(dataArray) || dataArray.length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: "Data must be a non-empty array",
-            });
-        }
+        for (const item of dataArray) {
+            let linenId = item.linen_id;
 
-        const values = dataArray.map((item) => {
-            if (!item.linen_id) {
-                throw new Error("linen_id is required");
+            if (!linenId) {
+                const [linenResult] = await connection.query(
+                    `
+                    INSERT INTO linen_items 
+                    (code, linen_name, unit, default_order_quantity, price, created_by, updated_by)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    `,
+                    [
+                        item.code,
+                        item.linen_name,
+                        item.unit,
+                        item.default_order_quantity || 0,
+                        item.price || 0,
+                        userName,
+                        userName,
+                    ]
+                );
+
+                linenId = linenResult.insertId;
             }
 
-            // --- แก้ไขจุดนี้: ปิดการเช็ค error และกำหนดค่า default แทน ---
-            const currentStockType = item.stock_type || "new";
+            lastLinenId = linenId; // 👈 เซฟไว้
 
-            return [
-                item.linen_id,
-                currentStockType, // ใช้ค่าที่ส่งมา หรือถ้าไม่มีให้เป็น 'new'
-                Number(item.remain) || 0,
-                item.note ?? null,
-                userName,
-                userName,
-            ];
-        });
+            await connection.query(
+                `
+                INSERT INTO stock
+                (linen_id, stock_type, remain, note, created_by, updated_by)
+                VALUES (?, 'new', ?, ?, ?, ?)
+                `,
+                [
+                    linenId,
+                    Number(item.remain) || 0,
+                    item.note ?? null,
+                    userName,
+                    userName,
+                ]
+            );
+        }
 
-        const sql = `
-            INSERT INTO stock 
-            (linen_id, stock_type, remain, note, created_by, updated_by) 
-            VALUES ?
-        `;
+        await connection.commit();
 
-        const [result] = await db.query(sql, [values]);
-
-        res.json({
+        return res.json({
             success: true,
-            message: `✅ Inserted ${result.affectedRows} record(s) into stock successfully`,
+            message: "Stock and linen items processed successfully",
         });
 
     } catch (err) {
-        console.error("❌ Error inserting stock:", err);
-        res.status(500).json({
+        await connection.rollback();
+
+        if (err.code === "ER_DUP_ENTRY") {
+            const [linen] = await connection.query(
+                `SELECT linen_name FROM linen_items WHERE id = ?`,
+                [lastLinenId]
+            );
+
+            return res.status(400).json({
+                success: false,
+                message: `สต๊อค "${linen[0]?.linen_name}" มีอยู่แล้ว`,
+            });
+        }
+
+        console.error(err);
+        return res.status(500).json({
             success: false,
-            message: "Failed to insert stock data",
-            error: err.message,
+            message: "เกิดข้อผิดพลาดในระบบ",
         });
+
+    } finally {
+        connection.release();
     }
 };
 
@@ -328,13 +415,13 @@ exports.updateStock = async (req, res) => {
 
     const row = rows[0];
     // ตัด unit ออกจาก Destructuring
-    const { id, linen_id, stock_type, remain, note } = row;
+    const { id, linen_id, stock_type, note } = row;
 
     // ตัด !unit ออกจากการตรวจสอบเงื่อนไข
-    if (!id || !linen_id || !stock_type || remain == null) {
+    if (!id || !linen_id || !stock_type) {
         return res.status(400).json({
             success: false,
-            message: "กรุณากรอกข้อมูลให้ครบ (รหัสผ้า, ประเภทสต๊อก, จำนวน)",
+            message: "กรุณากรอกข้อมูลให้ครบ (รหัสผ้า, ประเภทสต๊อก)",
         });
     }
 
@@ -375,7 +462,6 @@ exports.updateStock = async (req, res) => {
             SET
                 linen_id = ?,
                 stock_type = ?,
-                remain = ?,
                 note = ?,
                 updated_by = ?,
                 updated_at = NOW()
@@ -388,7 +474,6 @@ exports.updateStock = async (req, res) => {
         await db.query(updateSQL, [
             linen_id,
             stock_type,
-            Number(remain),
             note || null,
             updatedBy,
             id,

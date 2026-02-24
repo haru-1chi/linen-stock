@@ -8,7 +8,7 @@ router.post('/linen-item', authAndRole(1, 2), linenController.createLinenItem);
 router.put('/linen-item', linenController.updateLinenItem);
 router.get('/linen-item', linenController.getLinenItem);
 router.delete('/linen-item/:id', authAndRole(1, 2), linenController.deleteLinenItem);
-
+router.get('/linen-item/search', linenController.searchLinenItems);
 
 router.post('/linen-stock', authAndRole(1, 2), linenController.createStock);
 router.put('/linen-stock', authAndRole(1, 2), linenController.updateStock);

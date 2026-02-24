@@ -7,11 +7,11 @@ import { InputText } from "primereact/inputtext";
 import { Calendar } from "primereact/calendar";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
+import { LinenAutoComplete } from "./LinenAutoComplete";
 
 export default function StockFormDialog({
   dialogVisible,
   setDialogVisible,
-  dropdownOptions,
   rows,
   handleInputChange,
   addRow,
@@ -36,42 +36,28 @@ export default function StockFormDialog({
         size="small"
       >
         <Column
+          field="code"
           header="รหัส ED"
-          body={(row) => {
-            const selected = dropdownOptions.find(
-              (opt) => opt.value === row.linen_id,
-            );
-
-            return <p>{selected?.code || ""}</p>;
-          }}
+          style={{ width: "120px" }}
+          body={(row, opt) => (
+            <InputText
+              value={row.code}
+              onChange={(e) =>
+                handleInputChange(opt.rowIndex, "code", e.target.value)
+              }
+              className="w-full"
+            />
+          )}
         />
 
         <Column
-          field="linen_id"
           header="ชื่อรายการผ้า"
           className="w-75"
           body={(row, opt) => (
-            <Dropdown
-              value={row.linen_id}
-              options={dropdownOptions}
-              onChange={(e) => {
-                const selected = dropdownOptions.find(
-                  (optItem) => optItem.value === e.value,
-                );
-
-                handleInputChange(opt.rowIndex, "linen_id", e.value);
-
-                if (selected) {
-                  handleInputChange(opt.rowIndex, "unit", selected.unit);
-                } else {
-                  handleInputChange(opt.rowIndex, "unit", "");
-                }
-              }}
-              placeholder="เลือกรายการผ้า"
-              className="w-full"
-              filter
-              optionLabel="label"
-              optionValue="value"
+            <LinenAutoComplete
+              row={row}
+              rowIndex={opt.rowIndex}
+              handleInputChange={handleInputChange}
             />
           )}
         />
@@ -82,24 +68,61 @@ export default function StockFormDialog({
           body={(row, opt) => (
             <InputText
               value={row.remain}
+              keyfilter="int"
               onChange={(e) =>
                 handleInputChange(opt.rowIndex, "remain", e.target.value)
               }
               className="w-full"
-              keyfilter="int"
             />
           )}
         />
-
+        <Column
+          field="price"
+          header="ราคา(ต่อหน่วย)"
+          style={{ width: "120px" }}
+          body={(row, opt) => (
+            <InputText
+              value={row.price}
+              keyfilter="money"
+              onChange={(e) =>
+                handleInputChange(opt.rowIndex, "price", e.target.value)
+              }
+              className="w-full"
+            />
+          )}
+        />
         <Column
           field="unit"
           header="หน่วย"
-          body={(row) => (
-            <p>
-              {row.unit || "-"}
-            </p>
-          )}
           style={{ width: "120px" }}
+          body={(row, opt) => (
+            <InputText
+              value={row.unit}
+              onChange={(e) =>
+                handleInputChange(opt.rowIndex, "unit", e.target.value)
+              }
+              className="w-full"
+            />
+          )}
+        />
+        <Column
+          field="default_order_quantity"
+          header="จำนวนสั่งเริ่มต้น"
+          style={{ width: "140px" }}
+          body={(row, opt) => (
+            <InputText
+              value={row.default_order_quantity}
+              keyfilter="int"
+              onChange={(e) =>
+                handleInputChange(
+                  opt.rowIndex,
+                  "default_order_quantity",
+                  e.target.value,
+                )
+              }
+              className="w-full"
+            />
+          )}
         />
         <Column
           field="note"

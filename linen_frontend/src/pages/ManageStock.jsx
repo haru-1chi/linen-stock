@@ -489,7 +489,7 @@ function ManageStock() {
                 }))
               }
             />
-            fdakfjafljassafs
+            
             {/* <InputText
               id="detail"
               className="w-full"

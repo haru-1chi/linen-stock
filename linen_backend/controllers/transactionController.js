@@ -1,7 +1,8 @@
 const db = require("../db/db.js");
 
 exports.createLinenTransaction = async (req, res) => {
-    const connection = await db.getConnection();
+    let connection;
+    let transactionStarted = false;
 
     try {
         const dataArray = req.body;
@@ -14,7 +15,9 @@ exports.createLinenTransaction = async (req, res) => {
             });
         }
 
+        connection = await db.getConnection();
         await connection.beginTransaction();
+        transactionStarted = true;
 
         const priceAlerts = []; // 🔔 เก็บรายการแจ้งเตือนราคา
 
@@ -136,7 +139,6 @@ exports.createLinenTransaction = async (req, res) => {
         }
 
         await connection.commit();
-        connection.release();
 
         res.status(201).json({
             success: true,
@@ -145,8 +147,9 @@ exports.createLinenTransaction = async (req, res) => {
         });
 
     } catch (err) {
-        await connection.rollback();
-        connection.release();
+        if (connection && transactionStarted) {
+            await connection.rollback();
+        }
 
         console.error("❌ Error inserting linen transactions:", err);
 
@@ -154,6 +157,10 @@ exports.createLinenTransaction = async (req, res) => {
             success: false,
             message: err.message || "Failed to insert transactions",
         });
+    } finally {
+        if (connection) {
+            connection.release();
+        }
     }
 };
 

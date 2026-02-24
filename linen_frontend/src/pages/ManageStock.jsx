@@ -132,6 +132,12 @@ function ManageStock() {
   }, []);
 
   useEffect(() => {
+    if (linenItemsActive.length > 0 && !filterLinenId) {
+      setFilterLinenId(linenItemsActive[0].value);
+    }
+  }, [linenItemsActive]);
+
+  useEffect(() => {
     const fetchDepartment = async () => {
       try {
         const res = await axios.get(`${API_BASE}/stock/department`, {

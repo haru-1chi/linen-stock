@@ -1,10 +1,18 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import { Dropdown } from "primereact/dropdown";
 import axios from "axios";
 import { InputIcon } from "primereact/inputicon";
 import { IconField } from "primereact/iconfield";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
+import { ColumnGroup } from "primereact/columngroup";
+import { Row } from "primereact/row";
 import { Button } from "primereact/button";
 import { Dialog } from "primereact/dialog";
 import { Calendar } from "primereact/calendar";
@@ -92,6 +100,7 @@ function ManageStock() {
       const res = await axiosInstance.get("/stock/transactions", { params });
 
       setTransactions(res.data.data || []);
+      console.log(res.data.data);
     } catch (err) {
       showToast(
         "error",
@@ -119,8 +128,6 @@ function ManageStock() {
           default_order_quantity: item.default_order_quantity, // ✅ เพิ่ม
           deleted: item.deleted_at !== null,
         }));
-
-        console.log(res);
         const optionsActive = options.filter((item) => !item.deleted);
         setLinenItemsActive(optionsActive);
       } catch (err) {
@@ -243,6 +250,55 @@ function ManageStock() {
     setFilterMonth(newDate);
   };
 
+  const totals = useMemo(() => {
+    let totalIn = 0;
+    let totalOut = 0;
+
+    transactions.forEach((row) => {
+      if (row.status_type === "IN") {
+        totalIn += Number(row.amount || 0);
+      }
+      if (row.status_type === "OUT") {
+        totalOut += Number(row.amount || 0);
+      }
+    });
+
+    const currentBalance =
+      transactions.length > 0
+        ? transactions[transactions.length - 1].balance_after
+        : 0;
+
+    return {
+      totalIn,
+      totalOut,
+      currentBalance,
+    };
+  }, [transactions]);
+
+  const footerGroup = (
+    <ColumnGroup>
+      <Row>
+        <Column />
+        <Column footer="รวม" />
+        <Column />
+        <Column
+          footer={`+${totals.totalIn.toLocaleString("th-TH")}`}
+          footerClassName="text-green-600 font-bold"
+        />
+        <Column
+          footer={`-${totals.totalOut.toLocaleString("th-TH")}`}
+          footerClassName="text-red-500 font-bold"
+        />
+        <Column
+          footer={totals.currentBalance?.toLocaleString("th-TH")}
+          footerClassName="font-bold"
+        />
+        <Column />
+        <Column />
+      </Row>
+    </ColumnGroup>
+  );
+
   const renderFooter = () => {
     return (
       <div className="flex justify-end  ">
@@ -349,11 +405,12 @@ function ManageStock() {
           rows={10}
           rowsPerPageOptions={[10, 25, 50]}
           showGridlines
+          footerColumnGroup={footerGroup}
         >
           <Column
-            field="date"
+            field="created_at" // 👈 ให้ sort ตาม created_at
             header="วัน-เดือน-ปี"
-            body={(row) => new Date(row.date).toLocaleDateString("th-TH")}
+            body={(row) => new Date(row.created_at).toLocaleDateString("th-TH")}
             sortable
           />
           <Column
@@ -495,15 +552,6 @@ function ManageStock() {
                 }))
               }
             />
-            
-            {/* <InputText
-              id="detail"
-              className="w-full"
-              value={formData.partner_name}
-              onChange={(e) =>
-                setFormData({ ...formData, partner_name: e.target.value })
-              }
-            /> */}
           </div>
 
           {/* แถวที่ 3: ราคา และ จำนวน */}

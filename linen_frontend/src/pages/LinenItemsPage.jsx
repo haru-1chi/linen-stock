@@ -214,6 +214,26 @@ function LinenItemsPage() {
     />
   );
 
+  const priceEditor = (options) => (
+    <InputText
+      value={options.value ?? ""}
+      onChange={(e) => options.editorCallback(e.target.value)}
+      keyfilter="money"
+      className="w-full"
+      autoFocus
+    />
+  );
+
+  const numberEditor = (options) => (
+    <InputText
+      value={options.value ?? ""}
+      onChange={(e) => options.editorCallback(e.target.value)}
+      keyfilter="int"
+      className="w-full"
+      autoFocus
+    />
+  );
+
   //delete
   const handleDelete = useCallback(
     async (id) => {
@@ -308,14 +328,14 @@ function LinenItemsPage() {
           <Column
             field="default_order_quantity"
             header="จำนวนสั่ง(ค่าเริ่มต้น)"
-            editor={linenNameEditor}
+            editor={numberEditor}
             sortable
           />
 
           <Column
             field="price"
             header="ราคา(ต่อหน่วย)"
-            editor={linenNameEditor}
+            editor={priceEditor}
             sortable
           />
           <Column

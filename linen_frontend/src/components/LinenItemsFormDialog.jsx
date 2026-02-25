@@ -83,9 +83,14 @@ export default function LinenItemsFormDialog({
           header="จำนวน(ค่าเริ่มต้น)"
           body={(row, opt) => (
             <InputText
+              keyfilter="int"
               value={row.default_order_quantity}
               onChange={(e) =>
-                handleInputChange(opt.rowIndex, "default_order_quantity", e.target.value)
+                handleInputChange(
+                  opt.rowIndex,
+                  "default_order_quantity",
+                  e.target.value,
+                )
               }
               className="w-full"
             />
@@ -97,6 +102,7 @@ export default function LinenItemsFormDialog({
           header="ราคา(ต่อหน่วย)"
           body={(row, opt) => (
             <InputText
+              keyfilter="money"
               value={row.price}
               onChange={(e) =>
                 handleInputChange(opt.rowIndex, "price", e.target.value)

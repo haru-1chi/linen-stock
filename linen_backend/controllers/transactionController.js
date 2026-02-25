@@ -209,7 +209,7 @@ exports.getLinenTransactions = async (req, res) => {
         t.payer,
         t.receiver,
         t.balance_after,   -- ✅ ใช้ snapshot balance
-
+t.created_at,
         l.code,
         l.linen_name,
         l.unit,
@@ -221,7 +221,7 @@ exports.getLinenTransactions = async (req, res) => {
 
       ${where}
 
-      ORDER BY t.date DESC, t.id DESC
+      ORDER BY t.date ASC, t.id ASC
       LIMIT ? OFFSET ?
     `;
 

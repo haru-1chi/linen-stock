@@ -659,3 +659,59 @@ exports.getDepartment = async (req, res) => {
         });
     }
 };
+
+exports.getPartner = async (req, res) => {
+    try {
+        const includeDeleted = req.query.includeDeleted === "true";
+        const search = req.query.search;
+
+        let conditions = [];
+        let params = [];
+
+        // Soft delete filter
+        if (!includeDeleted) {
+            conditions.push("d.deleted_at IS NULL");
+        }
+
+        // Search by department name
+        if (search) {
+            conditions.push("d.partner_name LIKE ?");
+            params.push(`%${search}%`);
+        }
+
+        const where =
+            conditions.length > 0
+                ? "WHERE " + conditions.join(" AND ")
+                : "";
+
+        const sql = `
+            SELECT 
+                d.id,
+                CASE 
+                    WHEN d.deleted_at IS NOT NULL 
+                    THEN CONCAT(d.partner_name, ' (inactive)')
+                    ELSE d.partner_name
+                END AS partner_name,
+                d.created_by,
+                d.created_at,
+                d.updated_by,
+                d.updated_at,
+                d.deleted_at
+            FROM partner d
+            ${where}
+            ORDER BY d.partner_name ASC
+        `;
+
+        const [rows] = await db.query(sql, params);
+
+        res.status(200).json(rows || []);
+
+    } catch (err) {
+        console.error("❌ Error fetching partners:", err);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch partners",
+            error: err.message,
+        });
+    }
+};

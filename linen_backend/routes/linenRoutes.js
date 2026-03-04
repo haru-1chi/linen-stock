@@ -20,4 +20,5 @@ router.get('/transactions', transactionController.getLinenTransactions);
 
 //Lookup
 router.get('/department', linenController.getDepartment);
+router.get('/partner', linenController.getPartner);
 module.exports = router;

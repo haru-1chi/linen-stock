@@ -16,8 +16,9 @@ import {
   faXmark,
   faMagnifyingGlass,
   faFileImport,
+  faFileExport,
 } from "@fortawesome/free-solid-svg-icons";
-
+import { exportLinenItemsToExcel } from "../utils/exportLinenItemsExcel";
 const API_BASE =
   import.meta.env.VITE_REACT_APP_API || "http://localhost:3000/api";
 
@@ -29,19 +30,18 @@ function LinenItemsPage() {
   const [linenItemsActive, setLinenItemsActive] = useState([]);
   const [dialogVisible, setDialogVisible] = useState(false);
 
-  const showToast = (severity, summary, detail) => {
+  const showToast = useCallback((severity, summary, detail) => {
     toast.current?.show({
       severity,
       summary,
       detail,
       life: 3000,
     });
-  };
+  }, []);
 
   const fetchLinenItems = useCallback(async () => {
     try {
       const res = await axios.get(`${API_BASE}/stock/linen-item`);
-      console.log(res);
       setLinenItems(res.data);
     } catch (err) {
       showToast("error", "ผิดพลาด", "ไม่สามารถดึงข้อมูลได้");
@@ -279,6 +279,27 @@ function LinenItemsPage() {
     [confirmDelete],
   );
 
+  const header = (
+    <div className="flex justify-between">
+      <Button
+        type="button"
+        label="Export Excel"
+        severity="info"
+        onClick={() => exportLinenItemsToExcel(linenItems)}
+        data-pr-tooltip="XLS"
+        className="p-button-icon-right-custom"
+      >
+        {" "}
+        <FontAwesomeIcon icon={faFileExport} style={{ marginLeft: "0.5rem" }} />
+      </Button>
+      <Button
+        label="+ เพิ่มข้อมูลผ้า"
+        onClick={() => setDialogVisible(true)}
+        severity="success"
+      />
+    </div>
+  );
+
   return (
     <div className="overflow-hidden min-h-dvh flex flex-col justify-between">
       <Toast ref={toast} />
@@ -288,16 +309,11 @@ function LinenItemsPage() {
       >
         <div className="flex justify-between items-center mb-3">
           <h5 className="text-2xl font-semibold">รายชื่อผ้า</h5>
-          <div className="flex justify-between gap-3">
-            <Button
-              label="+ เพิ่มข้อมูลผ้า"
-              onClick={() => setDialogVisible(true)}
-              severity="success"
-            />
-          </div>
+          <div className="flex justify-between gap-3"></div>
         </div>
 
         <DataTable
+          header={header}
           dataKey="id"
           editMode="row"
           onRowEditComplete={onRowEditComplete}

@@ -90,7 +90,23 @@ exports.createLinenTransaction = async (req, res) => {
                     : currentRemain - amount;
 
             if (newBalance < 0) {
-                throw new Error("จำนวนคงเหลือไม่พอสำหรับการจ่าย");
+                const [unitRows] = await connection.query(
+                    `SELECT unit FROM linen_items WHERE id = ?`,
+                    [item.linen_id]
+                );
+
+                const unit = unitRows.length > 0 ? unitRows[0].unit : "";
+
+                const error = new Error("INSUFFICIENT_STOCK");
+                error.statusCode = 400;
+                error.details = {
+                    linen_id: item.linen_id,
+                    currentRemain,
+                    requested: amount,
+                    unit,
+                };
+
+                throw error;
             }
 
             // 📝 Insert transaction
@@ -142,8 +158,8 @@ exports.createLinenTransaction = async (req, res) => {
 
         res.status(201).json({
             success: true,
-            message: "✅ Transaction(s) inserted successfully",
-            priceAlerts, // 🔔 ส่งกลับไปให้ frontend ยิง swal
+            message: "Transaction(s) inserted successfully",
+            priceAlerts,
         });
 
     } catch (err) {
@@ -151,11 +167,18 @@ exports.createLinenTransaction = async (req, res) => {
             await connection.rollback();
         }
 
-        console.error("❌ Error inserting linen transactions:", err);
+        if (!err.statusCode || err.statusCode >= 500) {
+            console.error("Server Error:", err);
+        }
 
-        res.status(500).json({
+        res.status(err.statusCode || 500).json({
             success: false,
-            message: err.message || "Failed to insert transactions",
+            errorType: err.message,
+            message:
+                err.message === "INSUFFICIENT_STOCK"
+                    ? "จำนวนคงเหลือไม่เพียงพอ"
+                    : err.message || "Failed to insert transactions",
+            details: err.details || null,
         });
     } finally {
         if (connection) {

@@ -28,12 +28,13 @@ import {
   faMagnifyingGlass,
   faGreaterThanEqual,
   faLessThanEqual,
+  faFileExport,
   faChevronRight,
   faChevronLeft,
 } from "@fortawesome/free-solid-svg-icons";
 import { Toast } from "primereact/toast";
 import Swal from "sweetalert2";
-
+import { exportTransactionToExcel } from "../utils/exportTransactionUtils";
 import axiosInstance, { setAuthErrorInterceptor } from "../utils/axiosInstance";
 const API_BASE =
   import.meta.env.VITE_REACT_APP_API || "http://localhost:3000/api";
@@ -45,6 +46,7 @@ function ManageStock() {
   const [statusType, setStatusType] = useState("IN");
   const [linenItemsActive, setLinenItemsActive] = useState([]);
   const [departmentActive, setDepartmentActive] = useState([]);
+  const [partnerActive, setPartnerActive] = useState([]);
 
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -63,14 +65,9 @@ function ManageStock() {
     receiver: "",
   });
 
-  const showToast = (severity, summary, detail) => {
-    toast.current?.show({
-      severity,
-      summary,
-      detail,
-      life: 3000,
-    });
-  };
+  const showToast = useCallback((severity, summary, detail) => {
+    toast.current?.show({ severity, summary, detail, life: 3000 });
+  }, []);
 
   useEffect(() => {
     fetchTransactions();
@@ -100,7 +97,6 @@ function ManageStock() {
       const res = await axiosInstance.get("/stock/transactions", { params });
 
       setTransactions(res.data.data || []);
-      console.log(res.data.data);
     } catch (err) {
       showToast(
         "error",
@@ -130,6 +126,10 @@ function ManageStock() {
         }));
         const optionsActive = options.filter((item) => !item.deleted);
         setLinenItemsActive(optionsActive);
+
+        if (optionsActive.length > 0 && !filterLinenId) {
+          setFilterLinenId(optionsActive[0].value);
+        }
       } catch (err) {
         showToast("error", "ผิดพลาด", err.message || "โหลดรายการผ้าล้มเหลว");
       }
@@ -137,12 +137,6 @@ function ManageStock() {
 
     fetchLinenItems();
   }, []);
-
-  useEffect(() => {
-    if (linenItemsActive.length > 0 && !filterLinenId) {
-      setFilterLinenId(linenItemsActive[0].value);
-    }
-  }, [linenItemsActive]);
 
   useEffect(() => {
     const fetchDepartment = async () => {
@@ -165,6 +159,29 @@ function ManageStock() {
     };
 
     fetchDepartment();
+  }, [showToast]);
+
+  useEffect(() => {
+    const fetchPartner = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/stock/partner`, {
+          params: { includeDeleted: true },
+        });
+
+        const options = res.data.map((item) => ({
+          label: item.partner_name, // ← from backend alias
+          value: item.partner_name,
+          deleted: item.deleted_at !== null,
+        }));
+
+        const optionsActive = options.filter((item) => !item.deleted);
+        setPartnerActive(optionsActive);
+      } catch (err) {
+        showToast("error", "ผิดพลาด", err.message || "โหลดรายการผ้าล้มเหลว");
+      }
+    };
+
+    fetchPartner();
   }, [showToast]);
 
   const handleSubmit = async () => {
@@ -230,6 +247,30 @@ function ManageStock() {
       fetchTransactions();
     } catch (err) {
       console.error(err);
+
+      const errorType = err.response?.data?.errorType;
+
+      if (errorType === "INSUFFICIENT_STOCK") {
+        const details = err.response.data.details;
+
+        Swal.fire({
+          icon: "error",
+          title: "จำนวนคงเหลือไม่เพียงพอ",
+          html: `
+        <div style="text-align:left">
+          คงเหลือปัจจุบัน: <b>${details.currentRemain} ${details.unit}</b><br/>
+          จำนวนที่ต้องการจ่าย: <b>${details.requested} ${details.unit}</b>
+        </div>
+      `,
+          confirmButtonText: "ตกลง",
+          customClass: {
+            popup: "swal-high-zindex",
+          },
+        });
+
+        return;
+      }
+
       showToast(
         "error",
         "เกิดข้อผิดพลาด",
@@ -318,6 +359,14 @@ function ManageStock() {
     );
   };
 
+  const exportExcel = () => {
+    const linenLabel =
+      linenItemsActive.find((item) => item.value === filterLinenId)?.label ||
+      "ทั้งหมด";
+
+    exportTransactionToExcel(transactions, linenLabel, filterMonth);
+  };
+
   const header = (
     <div className="flex items-end justify-between">
       <div className="flex gap-5">
@@ -354,7 +403,7 @@ function ManageStock() {
           />
         </div>
       </div>
-      <Button
+      {/* <Button
         label="ล้างตัวกรอง"
         icon="pi pi-filter-slash"
         severity="secondary"
@@ -362,7 +411,18 @@ function ManageStock() {
           setFilterLinenId(null);
           setFilterMonth(null);
         }}
-      />
+      /> */}
+      <Button
+        type="button"
+        label="Export Excel"
+        severity="info"
+        onClick={exportExcel}
+        data-pr-tooltip="XLS"
+        className="p-button-icon-right-custom"
+      >
+        {" "}
+        <FontAwesomeIcon icon={faFileExport} style={{ marginLeft: "0.5rem" }} />
+      </Button>
     </div>
   );
 
@@ -379,6 +439,18 @@ function ManageStock() {
               severity="success"
               onClick={() => {
                 setStatusType("IN");
+
+                const selected = linenItemsActive.find(
+                  (item) => item.value === filterLinenId,
+                );
+
+                setFormData((prev) => ({
+                  ...prev,
+                  linen_id: filterLinenId || null,
+                  price: selected?.price || 0,
+                  amount: selected?.default_order_quantity || 0,
+                }));
+
                 setDialogVisible(true);
               }}
             />
@@ -388,89 +460,110 @@ function ManageStock() {
               severity="warning"
               onClick={() => {
                 setStatusType("OUT");
+
+                const selected = linenItemsActive.find(
+                  (item) => item.value === filterLinenId,
+                );
+
+                setFormData((prev) => ({
+                  ...prev,
+                  linen_id: filterLinenId || null,
+                  price: selected?.price || 0,
+                  amount: selected?.default_order_quantity || 0,
+                }));
+
                 setDialogVisible(true);
               }}
             />
           </div>
         </div>
+        <div className="relative">
+          <DataTable
+            header={header}
+            value={transactions}
+            loading={false}
+            dataKey="id"
+            tableStyle={{ minWidth: "50rem" }}
+            emptyMessage="ไม่พบข้อมูล"
+            paginator
+            rows={10}
+            rowsPerPageOptions={[10, 25, 50]}
+            showGridlines
+            footerColumnGroup={footerGroup}
+          >
+            <Column
+              field="created_at" // 👈 ให้ sort ตาม created_at
+              header="วัน-เดือน-ปี"
+              body={(row) =>
+                new Date(row.created_at).toLocaleDateString("th-TH")
+              }
+              sortable
+            />
+            <Column
+              header="รายละเอียด"
+              body={(row) => `${row.partner_name || "-"}`}
+            />
+            <Column
+              field="price"
+              header="ราคา"
+              body={(row) =>
+                row.price
+                  ? row.price.toLocaleString("th-TH", {
+                      style: "currency",
+                      currency: "THB",
+                    })
+                  : "-"
+              }
+            />
+            <Column
+              header="รับ"
+              body={(row) =>
+                row.status_type === "IN" ? (
+                  <span className="text-green-600 font-semibold">
+                    +{row.amount}
+                  </span>
+                ) : (
+                  "-"
+                )
+              }
+            />
 
-        <DataTable
-          header={header}
-          value={transactions}
-          loading={loading}
-          dataKey="id"
-          tableStyle={{ minWidth: "50rem" }}
-          emptyMessage="ไม่พบข้อมูล"
-          paginator
-          rows={10}
-          rowsPerPageOptions={[10, 25, 50]}
-          showGridlines
-          footerColumnGroup={footerGroup}
-        >
-          <Column
-            field="created_at" // 👈 ให้ sort ตาม created_at
-            header="วัน-เดือน-ปี"
-            body={(row) => new Date(row.created_at).toLocaleDateString("th-TH")}
-            sortable
-          />
-          <Column
-            header="รายละเอียด"
-            body={(row) =>
-              `${row.linen_name} (${row.unit}) - ${row.partner_name || "-"}`
-            }
-          />
-          <Column
-            field="price"
-            header="ราคา"
-            body={(row) =>
-              row.price
-                ? row.price.toLocaleString("th-TH", {
-                    style: "currency",
-                    currency: "THB",
-                  })
-                : "-"
-            }
-          />
-          <Column
-            header="รับ"
-            body={(row) =>
-              row.status_type === "IN" ? (
-                <span className="text-green-600 font-semibold">
-                  +{row.amount}
+            <Column
+              header="จ่าย"
+              body={(row) =>
+                row.status_type === "OUT" ? (
+                  <span className="text-red-500 font-semibold">
+                    -{row.amount}
+                  </span>
+                ) : (
+                  "-"
+                )
+              }
+            />
+
+            <Column
+              field="balance_after"
+              header="คงเหลือ"
+              body={(row) => (
+                <span className="font-semibold">
+                  {row.balance_after?.toLocaleString("th-TH")}
                 </span>
-              ) : (
-                "-"
-              )
-            }
-          />
+              )}
+            />
 
-          <Column
-            header="จ่าย"
-            body={(row) =>
-              row.status_type === "OUT" ? (
-                <span className="text-red-500 font-semibold">
-                  -{row.amount}
-                </span>
-              ) : (
-                "-"
-              )
-            }
-          />
+            <Column field="receiver" header="ผู้รับ" />
 
-          <Column
-            field="balance_after"
-            header="คงเหลือ"
-            body={(row) => (
-              <span className="font-semibold">
-                {row.balance_after?.toLocaleString("th-TH")}
-              </span>
-            )}
-          />
-
-          <Column field="receiver" header="ผู้รับ" />
-
-          <Column field="payer" header="ผู้จ่าย" />
-        </DataTable>
+            <Column field="payer" header="ผู้จ่าย" />
+          </DataTable>
+          {loading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-10 transition-opacity">
+              <i
+                className="pi pi-spin pi-spinner"
+                style={{ fontSize: "2rem" }}
+              ></i>
+            </div>
+          )}
+        </div>
       </div>
       <Dialog
         header={
@@ -540,7 +633,7 @@ function ManageStock() {
             <Dropdown
               id="detail"
               value={formData.partner_name}
-              options={departmentActive}
+              options={statusType === "IN" ? partnerActive : departmentActive}
               optionLabel="label"
               optionValue="value"
               className="w-full"

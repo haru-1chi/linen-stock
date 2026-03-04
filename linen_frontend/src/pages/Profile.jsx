@@ -58,14 +58,14 @@ function Profile() {
 
   const toast = useRef(null);
 
-  const showToast = (severity, summary, detail) => {
+  const showToast = useCallback((severity, summary, detail) => {
     toast.current?.show({
       severity,
       summary,
       detail,
       life: 3000,
     });
-  };
+  }, []);
 
   useEffect(() => {
     if (user) {

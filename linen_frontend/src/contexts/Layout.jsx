@@ -1,30 +1,17 @@
-// Layout.jsx
-import React, { useState } from "react";
-import SideBarMenu from "../components/SideBarMenu";
-// import BottomNavbar from "../components/BottomNavbar";
+import React from "react";
+import TopNavBar from "../components/TopNavBar"; // เปลี่ยนชื่อ Import
 import { Outlet } from "react-router-dom";
-// import { useAuth } from "./AuthContext";
 
 function Layout() {
-  const [collapsed, setCollapsed] = useState(false);
-  //   const { user } = useAuth();
-
   return (
-    <div>
-      {/* {user && ( */}
-      <div className="hidden sm:block">
-        <SideBarMenu collapsed={collapsed} setCollapsed={setCollapsed} />
-      </div>
-      {/* )} */}
-
-      <div
-        className={`transition-all duration-300 min-h-screen
-    ${collapsed ? "sm:ml-16" : "sm:ml-75"} 
-    ml-0`}
-      >
+    // เปลี่ยน min-h-screen เป็น h-screen และเพิ่ม flex flex-col
+    <div className="h-screen flex flex-col bg-slate-100 overflow-hidden">
+      <TopNavBar />
+      
+      {/* main ต้องเป็น flex-1 เพื่อกินพื้นที่ที่เหลือจาก Navbar */}
+      <main className="flex-1 pt-16 overflow-hidden">
         <Outlet />
-      </div>
-      {/* <BottomNavbar /> */}
+      </main>
     </div>
   );
 }

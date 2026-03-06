@@ -39,6 +39,13 @@ import axiosInstance, { setAuthErrorInterceptor } from "../utils/axiosInstance";
 const API_BASE =
   import.meta.env.VITE_REACT_APP_API || "http://localhost:3000/api";
 
+const formatDateLocal = (date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+};
+
 function ManageStock() {
   const token = localStorage.getItem("token");
   const toast = useRef(null);
@@ -50,6 +57,11 @@ function ManageStock() {
 
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [first, setFirst] = useState(0);
+  const [rows, setRows] = useState(9);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [sortField, setSortField] = useState("created_at");
+  const [sortOrder, setSortOrder] = useState(1);
 
   const [filterLinenId, setFilterLinenId] = useState(null);
   const [filterMonth, setFilterMonth] = useState(new Date());
@@ -69,15 +81,30 @@ function ManageStock() {
     toast.current?.show({ severity, summary, detail, life: 3000 });
   }, []);
 
+  const onPage = (event) => {
+    setFirst(event.first);
+    setRows(event.rows);
+  };
+
+  const onSort = (event) => {
+    setSortField(event.sortField);
+    setSortOrder(event.sortOrder);
+  };
+
   useEffect(() => {
     fetchTransactions();
-  }, [filterLinenId, filterMonth]);
+  }, [filterLinenId, filterMonth, first, rows, sortField, sortOrder]);
 
   const fetchTransactions = async () => {
     try {
       setLoading(true);
 
-      let params = {};
+      let params = {
+        page: first / rows + 1,
+        limit: rows,
+        sortField,
+        sortOrder,
+      };
 
       if (filterLinenId) {
         params.linen_id = filterLinenId;
@@ -90,19 +117,16 @@ function ManageStock() {
         const startDate = new Date(year, month, 1);
         const endDate = new Date(year, month + 1, 0);
 
-        params.start_date = startDate.toISOString().split("T")[0];
-        params.end_date = endDate.toISOString().split("T")[0];
+        params.start_date = formatDateLocal(startDate);
+        params.end_date = formatDateLocal(endDate);
       }
 
       const res = await axiosInstance.get("/stock/transactions", { params });
 
       setTransactions(res.data.data || []);
+      setTotalRecords(res.data.total);
     } catch (err) {
-      showToast(
-        "error",
-        "โหลดข้อมูลล้มเหลว",
-        err.response?.data?.message || err.message,
-      );
+      showToast("error", "โหลดข้อมูลล้มเหลว", err.message);
     } finally {
       setLoading(false);
     }
@@ -116,7 +140,7 @@ function ManageStock() {
         });
 
         const options = res.data.map((item) => ({
-          label: item.linen_name,
+          label: `${item.code} - ${item.linen_name}`,
           value: item.id,
           unit: item.unit,
           code: item.code,
@@ -403,15 +427,6 @@ function ManageStock() {
           />
         </div>
       </div>
-      {/* <Button
-        label="ล้างตัวกรอง"
-        icon="pi pi-filter-slash"
-        severity="secondary"
-        onClick={() => {
-          setFilterLinenId(null);
-          setFilterMonth(null);
-        }}
-      /> */}
       <Button
         type="button"
         label="Export Excel"
@@ -427,10 +442,8 @@ function ManageStock() {
   );
 
   return (
-    <div className="overflow-hidden min-h-dvh flex flex-col justify-between">
-      <div
-        className={`flex-1 transition-all duration-300 p-4 sm:p-8 pt-5 overflow-auto`}
-      >
+    <div className="h-full flex flex-col overflow-hidden bg-slate-50">
+      <div className="flex-1 p-4 sm:p-8 pt-5 overflow-auto">
         <div className="flex justify-between items-center mb-3">
           <h5 className="text-2xl font-semibold">ประวัติการรับ-จ่ายผ้า</h5>
           <div className="flex justify-between gap-3">
@@ -477,25 +490,35 @@ function ManageStock() {
             />
           </div>
         </div>
+
         <div className="relative">
           <DataTable
             header={header}
             value={transactions}
-            loading={false}
+            loading={loading}
             dataKey="id"
             tableStyle={{ minWidth: "50rem" }}
             emptyMessage="ไม่พบข้อมูล"
+            lazy
             paginator
-            rows={10}
-            rowsPerPageOptions={[10, 25, 50]}
+            rows={rows}
             showGridlines
+            first={first}
             footerColumnGroup={footerGroup}
+            totalRecords={totalRecords}
+            onPage={onPage}
+            rowsPerPageOptions={[9, 25, 50, 100]}
+            sortField={sortField}
+            sortOrder={sortOrder}
+            onSort={onSort}
           >
             <Column
-              field="created_at" // 👈 ให้ sort ตาม created_at
+              field="created_at"
               header="วัน-เดือน-ปี"
               body={(row) =>
-                new Date(row.created_at).toLocaleDateString("th-TH")
+                new Intl.DateTimeFormat("th-TH", {
+                  timeZone: "Asia/Bangkok",
+                }).format(new Date(row.created_at))
               }
               sortable
             />

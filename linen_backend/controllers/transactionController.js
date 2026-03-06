@@ -197,6 +197,8 @@ exports.getLinenTransactions = async (req, res) => {
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 50;
         const offset = (page - 1) * limit;
+        const sortField = req.query.sortField || "created_at";
+        const sortOrder = Number(req.query.sortOrder) === -1 ? "DESC" : "ASC";
 
         let conditions = [];
         let params = [];
@@ -212,7 +214,10 @@ exports.getLinenTransactions = async (req, res) => {
         }
 
         if (startDate && endDate) {
-            conditions.push("t.date BETWEEN ? AND ?");
+            conditions.push(`
+        t.created_at >= ? 
+        AND t.created_at < DATE_ADD(?, INTERVAL 1 DAY)
+    `);
             params.push(startDate, endDate);
         }
 
@@ -220,6 +225,25 @@ exports.getLinenTransactions = async (req, res) => {
             conditions.length > 0
                 ? "WHERE " + conditions.join(" AND ")
                 : "";
+
+        const countSql = `
+  SELECT COUNT(*) as total
+  FROM linen_transactions t
+  LEFT JOIN linen_items l ON t.linen_id = l.id
+  ${where}
+`;
+
+        const [[{ total }]] = await db.query(countSql, params);
+
+        const allowedSortFields = [
+            "created_at",
+            "price",
+            "balance_after",
+        ];
+
+        const finalSortField = allowedSortFields.includes(sortField)
+            ? sortField
+            : "created_at";
 
         const sql = `
       SELECT 
@@ -244,8 +268,8 @@ t.created_at,
 
       ${where}
 
-      ORDER BY t.date ASC, t.id ASC
-      LIMIT ? OFFSET ?
+  ORDER BY t.${finalSortField} ${sortOrder}, t.id ${sortOrder}
+    LIMIT ? OFFSET ?
     `;
 
         const [rows] = await db.query(sql, [...params, limit, offset]);
@@ -254,6 +278,7 @@ t.created_at,
             success: true,
             page,
             limit,
+            total,
             data: rows || [],
         });
 

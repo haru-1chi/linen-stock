@@ -3,6 +3,7 @@ const db = require('../db/db.js');
 const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || "secret_key";
+const REFRESH_SECRET = process.env.REFRESH_SECRET || "refresh_secret_key";
 
 exports.login = async (req, res) => {
   try {

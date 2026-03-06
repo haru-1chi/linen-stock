@@ -15,7 +15,9 @@ import Profile from "./pages/Profile";
 import LinenStockPage from "./pages/LinenStockPage";
 import LinenItemsPage from "./pages/LinenItemsPage";
 import Layout from "./contexts/Layout";
+import Layout_old from "./contexts/Layout_old";
 import ManageStock from "./pages/ManageStock";
+import LinenMasterDashboard from "./pages/LinenMasterDashboard";
 
 function App() {
   return (
@@ -26,6 +28,16 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route element={<Layout />}>
             <Route
+              path="/LinenMasterDashboard"
+              element={
+                <ProtectedRoute>
+                  <LinenMasterDashboard />
+                </ProtectedRoute>
+              }
+            />
+          </Route>
+          <Route element={<Layout_old />}>
+            <Route
               path="/profile"
               element={
                 <ProtectedRoute>
@@ -33,6 +45,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/manageStock"
               element={

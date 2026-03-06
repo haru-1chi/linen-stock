@@ -405,7 +405,6 @@ exports.createStock = async (req, res) => {
 exports.updateStock = async (req, res) => {
     const rows = req.body;
 
-    // 1️⃣ Allow only single record
     if (!Array.isArray(rows) || rows.length !== 1) {
         return res.status(400).json({
             success: false,
@@ -414,33 +413,45 @@ exports.updateStock = async (req, res) => {
     }
 
     const row = rows[0];
-    // ตัด unit ออกจาก Destructuring
-    const { id, linen_id, stock_type, note } = row;
 
-    // ตัด !unit ออกจากการตรวจสอบเงื่อนไข
+    const {
+        id,
+        linen_id,
+        linen_name,
+        unit,
+        default_order_quantity,
+        price,
+        stock_type,
+        note
+    } = row;
+
     if (!id || !linen_id || !stock_type) {
         return res.status(400).json({
             success: false,
-            message: "กรุณากรอกข้อมูลให้ครบ (รหัสผ้า, ประเภทสต๊อก)",
+            message: "กรุณากรอกข้อมูลให้ครบ",
         });
     }
 
+    const connection = await db.getConnection();
+    await connection.beginTransaction();
+
     try {
-        // 2️⃣ Duplicate check (same linen + stock_type + note but different id)
+
+        // 1️⃣ duplicate check
         const dupSQL = `
             SELECT id
             FROM stock
             WHERE linen_id = ?
-              AND stock_type = ?
-              AND (
-                    (note IS NULL AND ? IS NULL)
-                    OR note = ?
-                  )
-              AND id != ?
+            AND stock_type = ?
+            AND (
+                (note IS NULL AND ? IS NULL)
+                OR note = ?
+            )
+            AND id != ?
             LIMIT 1
         `;
 
-        const [dup] = await db.query(dupSQL, [
+        const [dup] = await connection.query(dupSQL, [
             linen_id,
             stock_type,
             note || null,
@@ -449,18 +460,41 @@ exports.updateStock = async (req, res) => {
         ]);
 
         if (dup.length > 0) {
+            await connection.rollback();
             return res.status(409).json({
                 success: false,
-                message: "มีข้อมูลซ้ำ (ชนิดผ้า + ประเภทสต๊อก + หมายเหตุ ซ้ำกัน)",
+                message: "มีข้อมูลซ้ำ (ชนิดผ้า + ประเภทสต๊อก + หมายเหตุ)",
             });
         }
 
+        const updatedBy = req.user?.name || "Unknown User";
 
-        // 3️⃣ Update (เอา field unit ออกจาก SQL)
-        const updateSQL = `
+        // 2️⃣ update linen_items
+        const updateLinenSQL = `
+            UPDATE linen_items
+            SET
+                linen_name = ?,
+                unit = ?,
+                default_order_quantity = ?,
+                price = ?,
+                updated_by = ?
+            WHERE id = ?
+        `;
+
+        await connection.query(updateLinenSQL, [
+            linen_name,
+            unit,
+            default_order_quantity || 0,
+            price || 0,
+            updatedBy,
+            linen_id
+        ]);
+
+
+        // 3️⃣ update stock
+        const updateStockSQL = `
             UPDATE stock
             SET
-                linen_id = ?,
                 stock_type = ?,
                 note = ?,
                 updated_by = ?,
@@ -469,16 +503,14 @@ exports.updateStock = async (req, res) => {
             LIMIT 1
         `;
 
-        const updatedBy = req.user?.name || "Unknown User";
-
-        await db.query(updateSQL, [
-            linen_id,
+        await connection.query(updateStockSQL, [
             stock_type,
             note || null,
             updatedBy,
             id,
         ]);
 
+        await connection.commit();
 
         return res.json({
             success: true,
@@ -486,11 +518,18 @@ exports.updateStock = async (req, res) => {
         });
 
     } catch (err) {
+
+        await connection.rollback();
+
         console.error("❌ updateStock Error:", err);
+
         return res.status(500).json({
             success: false,
             message: "เกิดข้อผิดพลาดระหว่างอัปเดตข้อมูล",
         });
+
+    } finally {
+        connection.release();
     }
 };
 
@@ -569,26 +608,31 @@ exports.getStock = async (req, res) => {
                 : "";
 
         const sql = `
-            SELECT 
-                s.id,
-                s.linen_id,
-                l.code,
-                l.linen_name,
-                s.stock_type,
-                s.remain,
-                -- ดึง unit มาจาก table linen_items แทน
-                l.unit, 
-                s.note,
-                s.created_by,
-                s.created_at,
-                s.updated_by,
-                s.updated_at,
-                s.deleted_at
-            FROM stock s
-            LEFT JOIN linen_items l ON s.linen_id = l.id
-            ${where}
-            ORDER BY l.code ASC, s.stock_type ASC
-        `;
+    SELECT 
+        s.id,
+        s.linen_id,
+
+        l.code,
+        l.linen_name,
+        l.unit,
+        l.default_order_quantity,
+        l.price,
+
+        s.stock_type,
+        s.remain,
+        s.note,
+
+        s.created_by,
+        s.created_at,
+        s.updated_by,
+        s.updated_at,
+        s.deleted_at
+
+    FROM stock s
+    LEFT JOIN linen_items l ON s.linen_id = l.id
+    ${where}
+    ORDER BY l.code ASC, s.stock_type ASC
+`;
 
         const [rows] = await db.query(sql, params);
 

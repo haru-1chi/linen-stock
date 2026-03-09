@@ -19,6 +19,7 @@ import { Calendar } from "primereact/calendar";
 import { InputText } from "primereact/inputtext";
 import { InputNumber } from "primereact/inputnumber";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { icon } from "@fortawesome/fontawesome-svg-core";
 import {
   faTrash,
   faEdit,
@@ -31,11 +32,20 @@ import {
   faFileExport,
   faChevronRight,
   faChevronLeft,
+  faArrowTrendUp,
+  faArrowTrendDown,
+  faCircleInfo,
+  faMinus
 } from "@fortawesome/free-solid-svg-icons";
 import { Toast } from "primereact/toast";
 import Swal from "sweetalert2";
 import { exportTransactionToExcel } from "../utils/exportTransactionUtils";
 import axiosInstance, { setAuthErrorInterceptor } from "../utils/axiosInstance";
+
+const iconUpHtml = icon(faArrowTrendUp).html[0];
+const iconDownHtml = icon(faArrowTrendDown).html[0];
+const iconInfoHtml = icon(faCircleInfo).html[0];
+const iconMinusHtml = icon(faMinus).html[0];
 const API_BASE =
   import.meta.env.VITE_REACT_APP_API || "http://localhost:3000/api";
 
@@ -46,8 +56,7 @@ const formatDateLocal = (date) => {
   return `${y}-${m}-${d}`;
 };
 
-function ManageStock() {
-  const token = localStorage.getItem("token");
+function ManageStock({ externalFilterId }) {
   const toast = useRef(null);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [statusType, setStatusType] = useState("IN");
@@ -56,6 +65,12 @@ function ManageStock() {
   const [partnerActive, setPartnerActive] = useState([]);
 
   const [transactions, setTransactions] = useState([]);
+  const [monthlySummary, setMonthlySummary] = useState({
+    totalIn: 0,
+    totalOut: 0,
+    latestBalance: 0,
+  });
+
   const [loading, setLoading] = useState(false);
   const [first, setFirst] = useState(0);
   const [rows, setRows] = useState(9);
@@ -92,6 +107,14 @@ function ManageStock() {
   };
 
   useEffect(() => {
+    if (externalFilterId) {
+      setFilterLinenId(externalFilterId);
+      // รีเซ็ตหน้าเพจไปที่หน้าแรกเมื่อเปลี่ยนประเภทผ้า
+      setFirst(0);
+    }
+  }, [externalFilterId]);
+
+  useEffect(() => {
     fetchTransactions();
   }, [filterLinenId, filterMonth, first, rows, sortField, sortOrder]);
 
@@ -125,6 +148,10 @@ function ManageStock() {
 
       setTransactions(res.data.data || []);
       setTotalRecords(res.data.total);
+
+      if (res.data.summary) {
+        setMonthlySummary(res.data.summary);
+      }
     } catch (err) {
       showToast("error", "โหลดข้อมูลล้มเหลว", err.message);
     } finally {
@@ -140,12 +167,13 @@ function ManageStock() {
         });
 
         const options = res.data.map((item) => ({
-          label: `${item.code} - ${item.linen_name}`,
+          label: `${item.code} - ${item.linen_name} (${item.unit})`,
           value: item.id,
           unit: item.unit,
           code: item.code,
-          price: item.price, // ✅ เพิ่ม
-          default_order_quantity: item.default_order_quantity, // ✅ เพิ่ม
+          price: item.price,
+          default_order_quantity: item.default_order_quantity,
+          default_issue_quantity: item.default_issue_quantity,
           deleted: item.deleted_at !== null,
         }));
         const optionsActive = options.filter((item) => !item.deleted);
@@ -243,12 +271,57 @@ function ManageStock() {
       // 🔔 เช็ค priceAlerts ก่อน
       if (response.data.priceAlerts?.length > 0) {
         response.data.priceAlerts.forEach((alert) => {
+          const isIncrease = alert.change_type === "increase";
+
           Swal.fire({
             icon: "info",
-            title: "แจ้งเตือนการเปลี่ยนแปลงราคา",
-            text: `${alert.linen_name} ราคา ${
-              alert.change_type === "increase" ? "เพิ่มขึ้น" : "ลดลง"
-            } จาก ${alert.old_price} เป็น ${alert.new_price} บาท`,
+            // หัวข้อใช้สี Slate เข้มดูเป็นทางการและน่าเชื่อถือ
+            title:
+              '<div class="text-2xl font-bold text-slate-800 tracking-tight">แจ้งเตือนราคาอัปเดต</div>',
+            html: `
+    <div class="mt-6 font-sans">
+      <div class="flex flex-col items-center gap-3">
+        <div class="w-full flex justify-between items-center px-5 py-3 bg-white rounded-2xl border border-slate-200">
+          <span class="text-slate-400 font-semibold">ราคาเดิม</span>
+          <span class="text-slate-500 font-bold text-xl decoration-slate-300">
+            ฿${alert.old_price.toLocaleString()}
+          </span>
+        </div>
+
+        <div class="flex items-center gap-2 ${isIncrease ? "text-amber-500" : "text-emerald-500"}">
+ <div style="width: 16px;">${isIncrease ? iconUpHtml : iconDownHtml}</div>
+          <span class="text-md font-black uppercase tracking-widest ml-2">
+            ${isIncrease ? "ราคาขึ้น" : "ราคาลง"}
+          </span>
+        </div>
+
+        <div class="w-full flex justify-between items-center px-5 py-4 ${isIncrease ? "bg-amber-50 border-amber-200" : "bg-emerald-50 border-emerald-200"} rounded-2xl border-2 border-solid shadow-sm">
+          <span class="${isIncrease ? "text-amber-700" : "text-emerald-700"} font-bold">ราคาใหม่</span>
+          <div class="text-right">
+             <span class="${isIncrease ? "text-amber-600" : "text-emerald-600"} font-black text-3xl">
+               ฿${alert.new_price.toLocaleString()}
+             </span>
+             <span class="text-xs block font-bold ${isIncrease ? "text-amber-500" : "text-emerald-500"}">ต่อหน่วย</span>
+          </div>
+        </div>
+      </div>
+
+<div class="mt-5 flex items-center justify-center gap-2 text-slate-400 text-sm font-medium">
+        <div style="width: 14px; color: #cbd5e1;">${iconInfoHtml}</div>
+        <span>เปลี่ยนแปลงประมาณ <b class="text-slate-600">${Math.abs(((alert.new_price - alert.old_price) / alert.old_price) * 100).toFixed(1)}%</b></span>
+      </div>
+    </div>
+  `,
+            confirmButtonText: "รับทราบการเปลี่ยนราคา",
+            // ใช้สี Indigo ที่คุณใช้อยู่ในระบบเพื่อให้ดูเป็นอันหนึ่งอันเดียวกัน
+            confirmButtonColor: "#4f46e5",
+            customClass: {
+              popup: "rounded-[2.5rem] p-8 shadow-2xl border-none",
+              confirmButton:
+                "w-full py-4 rounded-2xl text-lg font-bold shadow-lg shadow-indigo-100 mt-2",
+            },
+            buttonsStyling: true,
+            showCloseButton: true,
           });
         });
       }
@@ -276,20 +349,47 @@ function ManageStock() {
 
       if (errorType === "INSUFFICIENT_STOCK") {
         const details = err.response.data.details;
+        const missing = details.requested - details.currentRemain;
 
         Swal.fire({
-          icon: "error",
-          title: "จำนวนคงเหลือไม่เพียงพอ",
+          icon: "warning",
+          title:
+            '<div style="font-weight: 800; color: #1e293b; font-size: 1.6rem; letter-spacing: -0.025em;">สต็อกไม่เพียงพอ</div>',
           html: `
-        <div style="text-align:left">
-          คงเหลือปัจจุบัน: <b>${details.currentRemain} ${details.unit}</b><br/>
-          จำนวนที่ต้องการจ่าย: <b>${details.requested} ${details.unit}</b>
+    <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 8px; align-items: center; font-family: inherit;">
+      
+        <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: #fff1f2; border-radius: 1rem; border: 1px dashed #fecdd3;">
+        <span style="color: #be123c; font-weight: 600;">คงเหลือในคลัง</span>
+        <span style="color: #e11d48; font-weight: 800; font-size: 1.1rem;">
+            ${details.currentRemain.toLocaleString()} ${details.unit}
+        </span>
+      </div>
+       <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: #f8fafc; border-radius: 1rem;">
+        <span style="color: #64748b; font-weight: 600;">ต้องการจ่ายออก</span>
+        <span style="color: #0f172a; font-weight: 700; font-size: 1.1rem;">
+       ${details.requested.toLocaleString()} ${details.unit}
+        </span>
+      </div>
+
+      <div style="width: 90%; height: 2px; background: #f1f5f9; margin: 10px 0;"></div>
+
+      <div style="text-align: center; padding: 10px;">
+        <div style="color: #64748b; font-size: 0.85rem; margin-bottom: 4px;">จำนวนที่ยังขาดอีก</div>
+        <div style="color: #e11d48; font-size: 2.2rem; font-weight: 900; line-height: 1;">
+          ${missing.toLocaleString()} <span style="font-size: 1rem; font-weight: 600;">${details.unit}</span>
         </div>
-      `,
-          confirmButtonText: "ตกลง",
+      </div>
+
+    </div>
+  `,
+          confirmButtonText: "เข้าใจแล้ว",
+          confirmButtonColor: "#4f46e5",
           customClass: {
-            popup: "swal-high-zindex",
+            popup: "rounded-[2.5rem] p-10 swal-high-zindex",
+            confirmButton:
+              "w-full py-4 rounded-2xl text-lg font-bold shadow-xl shadow-indigo-100 mt-4",
           },
+          showCloseButton: true,
         });
 
         return;
@@ -392,61 +492,97 @@ function ManageStock() {
   };
 
   const header = (
-    <div className="flex items-end justify-between">
-      <div className="flex gap-5">
-        <Dropdown
-          value={filterLinenId}
-          options={linenItemsActive}
-          optionLabel="label"
-          optionValue="value"
-          placeholder="เลือกรายการผ้า"
-          className="w-100"
-          filter
-          onChange={(e) => setFilterLinenId(e.value)}
-        />
-
+    <div className="flex flex-col gap-4">
+      {/* แถวที่ 1: Filter & Summary */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-          <Button
-            icon={<FontAwesomeIcon icon={faChevronLeft} />}
-            onClick={() => changeMonth(-1)}
+          <Dropdown
+            value={filterLinenId}
+            options={linenItemsActive}
+            optionLabel="label"
+            optionValue="value"
+            placeholder="เลือกรายการผ้า"
+            className="w-100"
+            filter
+            onChange={(e) => setFilterLinenId(e.value)}
           />
 
-          <Calendar
-            value={filterMonth}
-            onChange={(e) => setFilterMonth(e.value)}
-            view="month"
-            dateFormat="mm/yy"
-            placeholder="เดือน/ปี"
-            showIcon
-            className="w-40"
-          />
+          <div className="flex items-center gap-1">
+            <Button
+              icon={<FontAwesomeIcon icon={faChevronLeft} />}
+              onClick={() => changeMonth(-1)}
+            />
 
-          <Button
-            icon={<FontAwesomeIcon icon={faChevronRight} />}
-            onClick={() => changeMonth(1)}
-          />
+            <Calendar
+              value={filterMonth}
+              onChange={(e) => setFilterMonth(e.value)}
+              view="month"
+              dateFormat="mm/yy"
+              placeholder="เดือน/ปี"
+              showIcon
+              className="w-40"
+            />
+
+            <Button
+              icon={<FontAwesomeIcon icon={faChevronRight} />}
+              onClick={() => changeMonth(1)}
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-6 px-4 py-2 bg-indigo-50 rounded-xl border border-indigo-100">
+          <div className="text-center">
+            <p className="text-xs text-slate-500 uppercase font-bold">
+              รับเข้าเดือนนี้
+            </p>
+            <p className="text-lg font-black text-emerald-600">
+              +{monthlySummary.totalIn.toLocaleString()}
+            </p>
+          </div>
+          <div className="w-px h-8 bg-indigo-200"></div>
+          <div className="text-center">
+            <p className="text-xs text-slate-500 uppercase font-bold">
+              จ่ายออกเดือนนี้
+            </p>
+            <p className="text-lg font-black text-red-500">
+              -{monthlySummary.totalOut.toLocaleString()}
+            </p>
+          </div>
+          <div className="w-px h-8 bg-indigo-200"></div>
+          <div className="text-center">
+            <p className="text-xs text-indigo-600 uppercase font-bold">
+              คงเหลือสิ้นเดือน
+            </p>
+            <p className="text-xl font-black text-indigo-700">
+              {monthlySummary.latestBalance.toLocaleString()}
+            </p>
+          </div>
         </div>
       </div>
-      <Button
-        type="button"
-        label="Export Excel"
-        severity="info"
-        onClick={exportExcel}
-        data-pr-tooltip="XLS"
-        className="p-button-icon-right-custom"
-      >
-        {" "}
-        <FontAwesomeIcon icon={faFileExport} style={{ marginLeft: "0.5rem" }} />
-      </Button>
     </div>
   );
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-slate-50">
-      <div className="flex-1 p-4 sm:p-8 pt-5 overflow-auto">
-        <div className="flex justify-between items-center mb-3">
-          <h5 className="text-2xl font-semibold">ประวัติการรับ-จ่ายผ้า</h5>
+      <div className="flex-1 p-4 sm:p-8 pt-6 overflow-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h5 className="text-2xl font-bold text-slate-800 mb-1">
+            ประวัติการรับ-จ่ายผ้า
+          </h5>
           <div className="flex justify-between gap-3">
+            <Button
+              type="button"
+              label="Export Excel"
+              severity="info"
+              onClick={exportExcel}
+              data-pr-tooltip="XLS"
+              className="p-button-icon-right-custom"
+            >
+              {" "}
+              <FontAwesomeIcon
+                icon={faFileExport}
+                style={{ marginLeft: "0.5rem" }}
+              />
+            </Button>
             <Button
               label="+ รับผ้า"
               severity="success"
@@ -482,7 +618,7 @@ function ManageStock() {
                   ...prev,
                   linen_id: filterLinenId || null,
                   price: selected?.price || 0,
-                  amount: selected?.default_order_quantity || 0,
+                  amount: selected?.default_issue_quantity || 0,
                 }));
 
                 setDialogVisible(true);
@@ -511,6 +647,7 @@ function ManageStock() {
             sortField={sortField}
             sortOrder={sortOrder}
             onSort={onSort}
+            rowClassName={() => "border-b border-slate-50"}
           >
             <Column
               field="created_at"
@@ -521,6 +658,7 @@ function ManageStock() {
                 }).format(new Date(row.created_at))
               }
               sortable
+              style={{ width: "150px" }}
             />
             <Column
               header="รายละเอียด"
@@ -537,6 +675,7 @@ function ManageStock() {
                     })
                   : "-"
               }
+              style={{ width: "150px" }}
             />
             <Column
               header="รับ"
@@ -549,6 +688,7 @@ function ManageStock() {
                   "-"
                 )
               }
+              style={{ width: "150px" }}
             />
 
             <Column
@@ -562,6 +702,7 @@ function ManageStock() {
                   "-"
                 )
               }
+              style={{ width: "150px" }}
             />
 
             <Column
@@ -572,6 +713,7 @@ function ManageStock() {
                   {row.balance_after?.toLocaleString("th-TH")}
                 </span>
               )}
+              style={{ width: "150px" }}
             />
 
             <Column field="receiver" header="ผู้รับ" />
@@ -628,7 +770,10 @@ function ManageStock() {
                   ...prev,
                   linen_id: selected.value,
                   price: selected.price || 0,
-                  amount: selected.default_order_quantity || 0,
+                  amount:
+                    statusType === "IN"
+                      ? selected.default_order_quantity || 0
+                      : selected.default_issue_quantity || 0,
                 }));
               }}
               placeholder="เลือกรายการผ้า"

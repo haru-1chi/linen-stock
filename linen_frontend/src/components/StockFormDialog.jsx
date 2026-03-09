@@ -77,6 +77,21 @@ export default function StockFormDialog({
           )}
         />
         <Column
+          field="unit"
+          header="หน่วย"
+          style={{ width: "120px" }}
+          body={(row, opt) => (
+            <InputText
+              value={row.unit}
+              onChange={(e) =>
+                handleInputChange(opt.rowIndex, "unit", e.target.value)
+              }
+              className="w-full"
+            />
+          )}
+        />
+
+        <Column
           field="price"
           header="ราคา(ต่อหน่วย)"
           style={{ width: "120px" }}
@@ -91,20 +106,7 @@ export default function StockFormDialog({
             />
           )}
         />
-        <Column
-          field="unit"
-          header="หน่วย"
-          style={{ width: "120px" }}
-          body={(row, opt) => (
-            <InputText
-              value={row.unit}
-              onChange={(e) =>
-                handleInputChange(opt.rowIndex, "unit", e.target.value)
-              }
-              className="w-full"
-            />
-          )}
-        />
+
         <Column
           field="default_order_quantity"
           header="จำนวนสั่งเริ่มต้น"
@@ -117,6 +119,25 @@ export default function StockFormDialog({
                 handleInputChange(
                   opt.rowIndex,
                   "default_order_quantity",
+                  e.target.value,
+                )
+              }
+              className="w-full"
+            />
+          )}
+        />
+        <Column
+          field="default_issue_quantity"
+          header="จำนวนจ่ายเริ่มต้น"
+          style={{ width: "140px" }}
+          body={(row, opt) => (
+            <InputText
+              value={row.default_issue_quantity}
+              keyfilter="int"
+              onChange={(e) =>
+                handleInputChange(
+                  opt.rowIndex,
+                  "default_issue_quantity",
                   e.target.value,
                 )
               }

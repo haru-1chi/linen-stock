@@ -31,8 +31,8 @@ exports.createLinenItem = async (req, res) => {
             item.linen_name.trim(),
             item.code.trim(),
             item.unit.trim(),
-            // เปลี่ยนจาก item.amount เป็น item.default_order_quantity
             Number(item.default_order_quantity) || 0,
+            Number(item.default_issue_quantity) || 0,
             Number(item.price) || 0,
             userName, // created_by
             userName, // updated_by
@@ -40,7 +40,7 @@ exports.createLinenItem = async (req, res) => {
 
         const sql = `
       INSERT INTO linen_items 
-      (linen_name, code, unit, default_order_quantity, price, created_by, updated_by) 
+      (linen_name, code, unit, default_order_quantity, default_issue_quantity, price, created_by, updated_by) 
       VALUES ?
     `;
 
@@ -81,12 +81,12 @@ exports.updateLinenItem = async (req, res) => {
             });
         }
 
-        // 1. ปรับชื่อ field จาก amount เป็น default_order_quantity
         const fields = [
             "linen_name",
             "code",
             "unit",
             "default_order_quantity",
+            "default_issue_quantity",
             "price",
         ];
 
@@ -109,7 +109,7 @@ exports.updateLinenItem = async (req, res) => {
                 let value = item[f];
 
                 // 2. ปรับเงื่อนไขการ Cast ตัวเลขให้ตรงกับชื่อ field ใหม่
-                if (f === "default_order_quantity" || f === "price") {
+                if (f === "default_order_quantity" || f === "default_issue_quantity" || f === "price") {
                     value = Number(value) || 0;
                 }
 
@@ -191,8 +191,8 @@ exports.getLinenItem = async (req, res) => {
                     ELSE l.linen_name
                 END AS linen_name,
                 l.unit,
-                -- ปรับจาก l.amount เป็น l.default_order_quantity
                 l.default_order_quantity, 
+                l.default_issue_quantity,
                 l.price,
                 l.created_by,
                 l.created_at,
@@ -201,7 +201,7 @@ exports.getLinenItem = async (req, res) => {
                 l.deleted_at
             FROM linen_items l
             ${where}
-            ORDER BY l.linen_name ASC
+            ORDER BY l.code ASC
         `;
 
         const [rows] = await db.query(sql, params);
@@ -292,6 +292,7 @@ exports.searchLinenItems = async (req, res) => {
         li.linen_name,
         li.unit,
         li.default_order_quantity,
+        li.default_issue_quantity,
         li.price
       FROM linen_items li
       ${where}
@@ -334,7 +335,7 @@ exports.createStock = async (req, res) => {
                 const [linenResult] = await connection.query(
                     `
                     INSERT INTO linen_items 
-                    (code, linen_name, unit, default_order_quantity, price, created_by, updated_by)
+                    (code, linen_name, unit, default_order_quantity, default_issue_quantity, price, created_by, updated_by)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                     `,
                     [
@@ -342,6 +343,7 @@ exports.createStock = async (req, res) => {
                         item.linen_name,
                         item.unit,
                         item.default_order_quantity || 0,
+                        item.default_issue_quantity || 0,
                         item.price || 0,
                         userName,
                         userName,
@@ -420,6 +422,7 @@ exports.updateStock = async (req, res) => {
         linen_name,
         unit,
         default_order_quantity,
+        default_issue_quantity,
         price,
         stock_type,
         note
@@ -476,6 +479,7 @@ exports.updateStock = async (req, res) => {
                 linen_name = ?,
                 unit = ?,
                 default_order_quantity = ?,
+                default_issue_quantity = ?,
                 price = ?,
                 updated_by = ?
             WHERE id = ?
@@ -485,6 +489,7 @@ exports.updateStock = async (req, res) => {
             linen_name,
             unit,
             default_order_quantity || 0,
+            default_issue_quantity || 0,
             price || 0,
             updatedBy,
             linen_id
@@ -616,6 +621,7 @@ exports.getStock = async (req, res) => {
         l.linen_name,
         l.unit,
         l.default_order_quantity,
+        l.default_issue_quantity,
         l.price,
 
         s.stock_type,

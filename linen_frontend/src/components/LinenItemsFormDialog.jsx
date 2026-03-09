@@ -80,7 +80,7 @@ export default function LinenItemsFormDialog({
 
         {/* default_order_quantity */}
         <Column
-          header="จำนวน(ค่าเริ่มต้น)"
+          header="จำนวนรับ(ค่าเริ่มต้น)"
           body={(row, opt) => (
             <InputText
               keyfilter="int"
@@ -89,6 +89,24 @@ export default function LinenItemsFormDialog({
                 handleInputChange(
                   opt.rowIndex,
                   "default_order_quantity",
+                  e.target.value,
+                )
+              }
+              className="w-full"
+            />
+          )}
+        />
+
+        <Column
+          header="จำนวนจ่าย(ค่าเริ่มต้น)"
+          body={(row, opt) => (
+            <InputText
+              keyfilter="int"
+              value={row.default_issue_quantity}
+              onChange={(e) =>
+                handleInputChange(
+                  opt.rowIndex,
+                  "default_issue_quantity",
                   e.target.value,
                 )
               }

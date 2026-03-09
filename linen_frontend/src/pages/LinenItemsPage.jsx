@@ -82,6 +82,7 @@ function LinenItemsPage() {
       linen_name: "",
       unit: "",
       default_order_quantity: "",
+      default_issue_quantity: "",
       price: "",
     },
   ]);
@@ -93,6 +94,7 @@ function LinenItemsPage() {
         linen_name: "",
         unit: "",
         default_order_quantity: "",
+        default_issue_quantity: "",
         price: "",
       },
     ]);
@@ -111,6 +113,7 @@ function LinenItemsPage() {
         linen_id: null,
         unit: "",
         default_order_quantity: "",
+        default_issue_quantity: "",
         price: "",
         stock_type: "new",
       },
@@ -141,6 +144,7 @@ function LinenItemsPage() {
         linen_name: r.linen_name?.trim(),
         unit: r.unit?.trim(),
         default_order_quantity: Number(r.default_order_quantity) || 0,
+        default_issue_quantity: Number(r.default_issue_quantity) || 0,
         price: Number(r.price) || 0,
       }));
 
@@ -187,6 +191,7 @@ function LinenItemsPage() {
                 linen_name: newData.linen_name,
                 unit: newData.unit,
                 default_order_quantity: newData.default_order_quantity,
+                default_order_issue: newData.default_order_issue,
                 price: newData.price,
               },
             ],
@@ -347,7 +352,12 @@ function LinenItemsPage() {
             editor={numberEditor}
             sortable
           />
-
+          <Column
+            field="default_issue_quantity"
+            header="จำนวนรับ(ค่าเริ่มต้น)"
+            editor={numberEditor}
+            sortable
+          />
           <Column
             field="price"
             header="ราคา(ต่อหน่วย)"

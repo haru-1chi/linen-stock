@@ -19,7 +19,9 @@ body {
   color: rgb(85, 85, 85);
 }
 
-
+.p-input-icon {
+  transform: translateY(-17%);
+}
 .p-password .p-icon-field {
   width: 100%;
 }

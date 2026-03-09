@@ -49,6 +49,11 @@ export const LinenAutoComplete = ({ row, rowIndex, handleInputChange }) => {
             "default_order_quantity",
             value.default_order_quantity,
           );
+          handleInputChange(
+            rowIndex,
+            "default_issue_quantity",
+            value.default_issue_quantity,
+          );
         }
       }}
     />

@@ -232,6 +232,24 @@ exports.getLinenTransactions = async (req, res) => {
   LEFT JOIN linen_items l ON t.linen_id = l.id
   ${where}
 `;
+        const summarySql = `
+            SELECT 
+                SUM(CASE WHEN t.status_type = 'IN' THEN t.amount ELSE 0 END) as total_in,
+                SUM(CASE WHEN t.status_type = 'OUT' THEN t.amount ELSE 0 END) as total_out
+            FROM linen_transactions t
+            ${where}
+        `;
+        
+        const [[summary]] = await db.query(summarySql, params);
+
+        const balanceSql = `
+            SELECT balance_after 
+            FROM linen_transactions t
+            ${where}
+            ORDER BY t.created_at DESC, t.id DESC
+            LIMIT 1
+        `;
+        const [[latestBalance]] = await db.query(balanceSql, params);
 
         const [[{ total }]] = await db.query(countSql, params);
 
@@ -260,7 +278,8 @@ t.created_at,
         l.code,
         l.linen_name,
         l.unit,
-        l.default_order_quantity
+        l.default_order_quantity,
+        l.default_issue_quantity
 
       FROM linen_transactions t
       LEFT JOIN linen_items l 
@@ -272,6 +291,9 @@ t.created_at,
     LIMIT ? OFFSET ?
     `;
 
+
+
+
         const [rows] = await db.query(sql, [...params, limit, offset]);
 
         res.status(200).json({
@@ -279,6 +301,11 @@ t.created_at,
             page,
             limit,
             total,
+            summary: {
+                totalIn: Number(summary.total_in || 0),
+                totalOut: Number(summary.total_out || 0),
+                latestBalance: latestBalance ? latestBalance.balance_after : 0
+            },
             data: rows || [],
         });
 

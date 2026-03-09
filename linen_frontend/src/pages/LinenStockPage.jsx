@@ -87,6 +87,7 @@ function LinenStockPage() {
     price: "",
     unit: "",
     default_order_quantity: "",
+    default_issue_quantity: "",
     note: "",
   };
 
@@ -137,6 +138,7 @@ function LinenStockPage() {
         code: r.code,
         unit: r.unit,
         default_order_quantity: r.default_order_quantity,
+        default_issue_quantity: r.default_issue_quantity,
         price: r.price,
         stock_type: "new",
         remain: Number(r.remain),

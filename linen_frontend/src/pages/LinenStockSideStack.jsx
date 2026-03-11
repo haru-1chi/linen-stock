@@ -16,6 +16,7 @@ import axios from "axios";
 import axiosInstance from "../utils/axiosInstance";
 import { IconField } from "primereact/iconfield";
 import { InputIcon } from "primereact/inputicon";
+import { Dropdown } from "primereact/dropdown";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faMagnifyingGlass,
@@ -30,7 +31,7 @@ import {
 const API_BASE =
   import.meta.env.VITE_REACT_APP_API || "http://localhost:3000/api";
 
-function LinenStockSideStack({ onSelect, selectedId }) {
+function LinenStockSideStack({ onSelect, selectedId, refreshKey }) {
   const toast = useRef(null);
   const token = localStorage.getItem("token");
 
@@ -39,6 +40,7 @@ function LinenStockSideStack({ onSelect, selectedId }) {
   const [linenItemsActive, setLinenItemsActive] = useState([]);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [sortOrder, setSortOrder] = useState("asc");
+  const [linenTypeOptions, setLinenTypeOptions] = useState([]);
 
   const [editDialogVisible, setEditDialogVisible] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -49,9 +51,31 @@ function LinenStockSideStack({ onSelect, selectedId }) {
 
   const openEditDialog = (e, item) => {
     e.stopPropagation();
-    setEditingItem({ ...item });
+    setEditingItem({
+      ...item,
+      linen_type: Number(item.linen_type),
+    });
     setEditDialogVisible(true);
   };
+
+  useEffect(() => {
+    const fetchLinenTypes = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/stock/linen-type`);
+
+        const options = res.data.map((item) => ({
+          label: item.type_name,
+          value: item.id,
+        }));
+
+        setLinenTypeOptions(options);
+      } catch (err) {
+        showToast("error", "ผิดพลาด", err.message || "โหลดประเภทผ้าล้มเหลว");
+      }
+    };
+
+    fetchLinenTypes();
+  }, []);
 
   const fetchStock = useCallback(async () => {
     try {
@@ -75,6 +99,7 @@ function LinenStockSideStack({ onSelect, selectedId }) {
 
           linen_name: editingItem.linen_name,
           unit: editingItem.unit,
+          linen_type: editingItem.linen_type,
           default_order_quantity: editingItem.default_order_quantity,
           default_issue_quantity: editingItem.default_issue_quantity,
           price: editingItem.price,
@@ -134,11 +159,12 @@ function LinenStockSideStack({ onSelect, selectedId }) {
   useEffect(() => {
     fetchStock();
     fetchLinenItems();
-  }, [fetchStock, fetchLinenItems]);
+  }, [fetchStock, fetchLinenItems, refreshKey]);
 
   // --- Logic เพิ่มข้อมูล ---
   const initialRow = {
     code: "",
+    linen_type: null,
     linen_id: null,
     linen_name: "",
     remain: "",
@@ -201,7 +227,6 @@ function LinenStockSideStack({ onSelect, selectedId }) {
     confirmDialog({
       message: "ต้องการลบรายการนี้ออกจากคลังหรือไม่?",
       header: "ยืนยันการลบ",
-      icon: "pi pi-exclamation-triangle",
       acceptClassName: "p-button-danger rounded-lg",
       rejectClassName: "p-button-text rounded-lg",
       accept: () => handleDelete(id),
@@ -332,11 +357,7 @@ function LinenStockSideStack({ onSelect, selectedId }) {
 
         {sortedStock.length === 0 && (
           <div className="text-center py-20 text-slate-300">
-            <FontAwesomeIcon
-              icon={faBoxOpen}
-              size="3x"
-              className="mb-4 opacity-10"
-            />
+            <FontAwesomeIcon icon={faBoxOpen} size="3x" className="mb-4" />
             <p className="text-sm font-medium">ไม่พบรายการผ้าในคลัง</p>
           </div>
         )}
@@ -376,16 +397,31 @@ function LinenStockSideStack({ onSelect, selectedId }) {
       >
         <div className="py-2">
           <div className="mb-4">
-            <p className="text-sm font-bold text-slate-500 mb-1">รายการผ้า</p>
+            <p className="text-sm font-bold text-indigo-500 mb-1">
+              {" "}
+              {editingItem?.code}
+            </p>
             <p className="text-lg font-bold text-slate-700">
               {editingItem?.linen_name}
-            </p>
-            <p className="text-xs text-indigo-500 font-mono">
-              {editingItem?.code}
             </p>
           </div>
 
           <div className="flex flex-col gap-3">
+            <div>
+              <label className="font-bold text-slate-600">ประเภท</label>
+              <Dropdown
+                value={editingItem?.linen_type ?? null}
+                options={linenTypeOptions}
+                optionLabel="label"
+                optionValue="value"
+                placeholder="เลือกประเภทผ้า"
+                className="w-full"
+                onChange={(e) =>
+                  setEditingItem({ ...editingItem, linen_type: e.value })
+                }
+              />
+            </div>
+
             <div>
               <label className="font-bold text-slate-600">ชื่อผ้า</label>
               <InputText
@@ -475,6 +511,7 @@ function LinenStockSideStack({ onSelect, selectedId }) {
         dialogVisible={dialogVisible}
         setDialogVisible={() => setDialogVisible(false)}
         rows={rows}
+        linenTypeOptions={linenTypeOptions}
         dropdownOptions={linenItemsActive}
         handleInputChange={handleInputChange}
         addRow={addRow}

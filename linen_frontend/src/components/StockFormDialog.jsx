@@ -13,6 +13,7 @@ export default function StockFormDialog({
   dialogVisible,
   setDialogVisible,
   rows,
+  linenTypeOptions,
   handleInputChange,
   addRow,
   removeRow,
@@ -46,6 +47,25 @@ export default function StockFormDialog({
                 handleInputChange(opt.rowIndex, "code", e.target.value)
               }
               className="w-full"
+            />
+          )}
+        />
+
+        <Column
+          field="linen_type"
+          header="ประเภทผ้า"
+          style={{ width: "160px" }}
+          body={(row, opt) => (
+            <Dropdown
+              value={row.linen_type}
+              options={linenTypeOptions}
+              optionLabel="label"
+              optionValue="value"
+              placeholder="เลือกประเภท"
+              className="w-full"
+              onChange={(e) =>
+                handleInputChange(opt.rowIndex, "linen_type", e.value)
+              }
             />
           )}
         />

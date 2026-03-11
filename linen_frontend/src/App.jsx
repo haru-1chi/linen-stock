@@ -28,15 +28,13 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route element={<Layout />}>
             <Route
-              path="/LinenMasterDashboard"
+              path="/linen/dashboard"
               element={
                 <ProtectedRoute>
                   <LinenMasterDashboard />
                 </ProtectedRoute>
               }
             />
-          </Route>
-          <Route element={<Layout_old />}>
             <Route
               path="/profile"
               element={
@@ -45,9 +43,10 @@ function App() {
                 </ProtectedRoute>
               }
             />
-
+          </Route>
+          <Route element={<Layout_old />}>
             <Route
-              path="/manageStock"
+              path="/linen/stocks"
               element={
                 <ProtectedRoute>
                   <ManageStock />
@@ -55,7 +54,7 @@ function App() {
               }
             />
             <Route
-              path="/linen-stock"
+              path="/linen/stocks/legacy"
               element={
                 <ProtectedRoute>
                   <LinenStockPage />
@@ -63,7 +62,7 @@ function App() {
               }
             />
             <Route
-              path="/linen-item"
+              path="/linen/items"
               element={
                 <ProtectedRoute>
                   <LinenItemsPage />

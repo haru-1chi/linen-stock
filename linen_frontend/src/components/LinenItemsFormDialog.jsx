@@ -50,6 +50,19 @@ export default function LinenItemsFormDialog({
           )}
         />
 
+       <Column
+          header="ประเภทผ้า"
+          body={(row, opt) => (
+            <InputText
+              value={row.linen_type}
+              onChange={(e) =>
+                handleInputChange(opt.rowIndex, "linen_type", e.target.value)
+              }
+              className="w-full"
+            />
+          )}
+        />
+
         {/* NAME */}
         <Column
           header="ชื่อผ้า"

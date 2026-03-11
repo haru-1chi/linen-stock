@@ -35,12 +35,13 @@ import {
   faArrowTrendUp,
   faArrowTrendDown,
   faCircleInfo,
-  faMinus
+  faMinus,
 } from "@fortawesome/free-solid-svg-icons";
 import { Toast } from "primereact/toast";
 import Swal from "sweetalert2";
 import { exportTransactionToExcel } from "../utils/exportTransactionUtils";
 import axiosInstance, { setAuthErrorInterceptor } from "../utils/axiosInstance";
+import { AutoComplete } from "primereact/autocomplete";
 
 const iconUpHtml = icon(faArrowTrendUp).html[0];
 const iconDownHtml = icon(faArrowTrendDown).html[0];
@@ -56,8 +57,9 @@ const formatDateLocal = (date) => {
   return `${y}-${m}-${d}`;
 };
 
-function ManageStock({ externalFilterId }) {
+function ManageStock({ externalFilterId, onSuccess }) {
   const toast = useRef(null);
+  const [detailSuggestions, setDetailSuggestions] = useState([]);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [statusType, setStatusType] = useState("IN");
   const [linenItemsActive, setLinenItemsActive] = useState([]);
@@ -81,6 +83,7 @@ function ManageStock({ externalFilterId }) {
   const [filterLinenId, setFilterLinenId] = useState(null);
   const [filterMonth, setFilterMonth] = useState(new Date());
 
+  const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     selectedItem: null,
     linen_id: null,
@@ -171,6 +174,7 @@ function ManageStock({ externalFilterId }) {
           value: item.id,
           unit: item.unit,
           code: item.code,
+          linen_type: item.linen_type,
           price: item.price,
           default_order_quantity: item.default_order_quantity,
           default_issue_quantity: item.default_issue_quantity,
@@ -188,7 +192,19 @@ function ManageStock({ externalFilterId }) {
     };
 
     fetchLinenItems();
-  }, []);
+  }, [onSuccess]);
+
+  const searchDetail = (event) => {
+    const query = event.query.toLowerCase();
+
+    const source = statusType === "IN" ? partnerActive : departmentActive;
+
+    const filtered = source.filter((item) =>
+      item.label.toLowerCase().includes(query),
+    );
+
+    setDetailSuggestions(filtered);
+  };
 
   useEffect(() => {
     const fetchDepartment = async () => {
@@ -237,21 +253,27 @@ function ManageStock({ externalFilterId }) {
   }, [showToast]);
 
   const handleSubmit = async () => {
-    try {
-      if (
-        !formData.linen_id ||
-        !formData.date ||
-        !formData.amount ||
-        formData.amount <= 0
-      ) {
-        showToast(
-          "warn",
-          "ข้อมูลไม่ครบ",
-          "กรุณาเลือกรายการผ้า วันที่ และจำนวน",
-        );
-        return;
-      }
+    setSubmitted(true); // เริ่มต้นการตรวจสอบ
 
+    // เช็คเงื่อนไข: ต้องมีครบทุกช่องที่สำคัญ
+    const isValid =
+      formData.linen_id &&
+      formData.date &&
+      formData.amount > 0 &&
+      formData.partner_name && // รายละเอียด
+      formData.receiver && // ผู้รับ
+      formData.payer; // ผู้จ่าย
+
+    if (!isValid) {
+      showToast(
+        "warn",
+        "ข้อมูลไม่ครบถ้วน",
+        "กรุณากรอกข้อมูลในช่องที่ทำเครื่องหมายสีแดงให้ครบถ้วน",
+      );
+      return;
+    }
+
+    try {
       const payload = [
         {
           linen_id: formData.linen_id,
@@ -327,8 +349,11 @@ function ManageStock({ externalFilterId }) {
       }
 
       showToast("success", "สำเร็จ", "บันทึกข้อมูลเรียบร้อย 🎉");
-
       setDialogVisible(false);
+      setSubmitted(false);
+      fetchTransactions();
+
+      if (onSuccess) onSuccess();
 
       setFormData({
         selectedItem: null,
@@ -415,6 +440,21 @@ function ManageStock({ externalFilterId }) {
     setFilterMonth(newDate);
   };
 
+  const hideDialog = () => {
+    setDialogVisible(false);
+    setSubmitted(false); // Reset validation state
+    setFormData({
+      selectedItem: null,
+      linen_id: null,
+      date: new Date(), // ไม่ควรเป็น null
+      partner_name: "",
+      price: null,
+      amount: null,
+      payer: "",
+      receiver: "",
+    });
+  };
+
   const totals = useMemo(() => {
     let totalIn = 0;
     let totalOut = 0;
@@ -469,13 +509,11 @@ function ManageStock({ externalFilterId }) {
       <div className="flex justify-end  ">
         <Button
           label="ยกเลิก"
-          icon="pi pi-times"
-          onClick={() => setDialogVisible(false)}
+          onClick={hideDialog}
           className="p-button-text p-button-secondary"
         />
         <Button
           label="บันทึกข้อมูล"
-          icon="pi pi-check"
           onClick={handleSubmit}
           autoFocus
         />
@@ -563,6 +601,7 @@ function ManageStock({ externalFilterId }) {
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-slate-50">
+      <Toast ref={toast} />
       <div className="flex-1 p-4 sm:p-8 pt-6 overflow-auto">
         <div className="flex justify-between items-center mb-6">
           <h5 className="text-2xl font-bold text-slate-800 mb-1">
@@ -747,11 +786,11 @@ function ManageStock({ externalFilterId }) {
         breakpoints={{ "960px": "75vw", "641px": "90vw" }}
         modal
         footer={renderFooter()}
-        onHide={() => setDialogVisible(false)}
+        onHide={hideDialog}
       >
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-2">
           {/* แถวที่ 1: รายการ (ยาวเต็ม) */}
-          <div className="flex flex-col   col-span-4">
+          <div className="flex flex-col col-span-4">
             <label htmlFor="item">รายการ</label>
             <Dropdown
               id="item"
@@ -777,13 +816,16 @@ function ManageStock({ externalFilterId }) {
                 }));
               }}
               placeholder="เลือกรายการผ้า"
-              className="w-full"
+              className={`w-full ${submitted && !formData.linen_id ? "p-invalid" : ""}`}
               filter
             />
+            {submitted && !formData.linen_id && (
+              <small className="p-error">กรุณาเลือกรายการผ้า</small>
+            )}
           </div>
 
           {/* แถวที่ 2: วันที่ และ รายละเอียด */}
-          <div className="flex flex-col   md:col-span-1">
+          <div className="flex flex-col col-span-1">
             <label htmlFor="date">วันที่</label>
             <Calendar
               id="date"
@@ -796,16 +838,18 @@ function ManageStock({ externalFilterId }) {
               disabled
             />
           </div>
-          <div className="flex flex-col  ">
+          <div className="flex flex-col col-span-3">
             <label htmlFor="detail">รายละเอียด</label>
-            <Dropdown
+            <AutoComplete
               id="detail"
               value={formData.partner_name}
-              options={statusType === "IN" ? partnerActive : departmentActive}
-              optionLabel="label"
-              optionValue="value"
-              className="w-full"
-              filter
+              suggestions={detailSuggestions}
+              completeMethod={searchDetail}
+              field="label"
+              className={`w-full ${submitted && !formData.partner_name ? "p-invalid" : ""}`}
+              dropdown
+              placeholder="เลือกหรือพิมพ์รายละเอียด"
+              forceSelection={false}
               onChange={(e) =>
                 setFormData((prev) => ({
                   ...prev,
@@ -813,25 +857,31 @@ function ManageStock({ externalFilterId }) {
                 }))
               }
             />
+            {submitted && !formData.partner_name && (
+              <small className="p-error">กรุณาระบุรายละเอียด</small>
+            )}
           </div>
 
           {/* แถวที่ 3: ราคา และ จำนวน */}
-          <div className="flex flex-col  ">
+          <div className="flex flex-col">
             <label htmlFor="price">ราคา (บาท)</label>
             <InputNumber
               id="price"
               mode="currency"
               currency="THB"
               locale="th-TH"
-              className="w-full"
+              className={`w-full ${submitted && (!formData.price || formData.price <= 0) ? "p-invalid" : ""}`}
               inputClassName="w-full"
               value={formData.price}
               onValueChange={(e) =>
                 setFormData({ ...formData, price: e.value })
               }
             />
+            {submitted && (!formData.price || formData.price <= 0) && (
+              <small className="p-error">กรุณาระบุราคาที่มากกว่า 0</small>
+            )}
           </div>
-          <div className="flex flex-col  ">
+          <div className="flex flex-col">
             <label htmlFor="amount">
               {statusType === "IN" ? "รับจำนวน" : "จ่ายจำนวน"}
             </label>
@@ -839,38 +889,47 @@ function ManageStock({ externalFilterId }) {
               id="amount"
               showButtons
               min={0}
-              className="w-full"
+              className={`w-full ${submitted && (!formData.amount || formData.amount <= 0) ? "p-invalid" : ""}`}
               inputClassName="w-full"
               value={formData.amount}
               onValueChange={(e) =>
                 setFormData({ ...formData, amount: e.value })
               }
             />
+            {submitted && (!formData.amount || formData.amount <= 0) && (
+              <small className="p-error">กรุณาระบุจำนวนที่มากกว่า 0</small>
+            )}
           </div>
 
           {/* แถวที่ 4: ผู้จ่าย และ ผู้รับ */}
 
-          <div className="flex flex-col   md:col-span-2">
+          <div className="flex flex-col">
             <label htmlFor="receiver">ผู้รับ</label>
             <InputText
               id="receiver"
-              className="w-full"
+              className={`w-full ${submitted && !formData.receiver ? "p-invalid" : ""}`}
               value={formData.receiver}
               onChange={(e) =>
                 setFormData({ ...formData, receiver: e.target.value })
               }
             />
+            {submitted && !formData.receiver && (
+              <small className="p-error">กรุณาระบุชื่อผู้รับ</small>
+            )}
           </div>
-          <div className="flex flex-col md:col-span-2">
+          <div className="flex flex-col">
             <label htmlFor="payer">ผู้จ่าย</label>
             <InputText
               id="payer"
-              className="w-full"
+              className={`w-full ${submitted && !formData.payer ? "p-invalid" : ""}`}
               value={formData.payer}
               onChange={(e) =>
                 setFormData({ ...formData, payer: e.target.value })
               }
             />
+            {submitted && !formData.payer && (
+              <small className="p-error">กรุณาระบุชื่อผู้จ่าย</small>
+            )}
           </div>
         </div>
       </Dialog>

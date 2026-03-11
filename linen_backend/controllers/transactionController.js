@@ -239,7 +239,7 @@ exports.getLinenTransactions = async (req, res) => {
             FROM linen_transactions t
             ${where}
         `;
-        
+
         const [[summary]] = await db.query(summarySql, params);
 
         const balanceSql = `
@@ -279,6 +279,7 @@ t.created_at,
         l.linen_name,
         l.unit,
         l.default_order_quantity,
+            l.linen_type,
         l.default_issue_quantity
 
       FROM linen_transactions t

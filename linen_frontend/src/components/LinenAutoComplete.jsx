@@ -39,6 +39,7 @@ export const LinenAutoComplete = ({ row, rowIndex, handleInputChange }) => {
           handleInputChange(rowIndex, "linen_name", value);
           handleInputChange(rowIndex, "linen_id", null);
         } else if (value) {
+          handleInputChange(rowIndex, "linen_type", value.linen_type);
           handleInputChange(rowIndex, "code", value.code);
           handleInputChange(rowIndex, "linen_id", value.id);
           handleInputChange(rowIndex, "linen_name", value.linen_name);

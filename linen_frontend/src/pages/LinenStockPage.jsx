@@ -81,6 +81,7 @@ function LinenStockPage() {
   //add
   const initialRow = {
     code: "",
+    linen_type: null,
     linen_id: null,
     linen_name: "",
     remain: "",
@@ -136,6 +137,7 @@ function LinenStockPage() {
         linen_id: r.linen_id,
         linen_name: r.linen_name,
         code: r.code,
+        linen_type: r.linen_type,
         unit: r.unit,
         default_order_quantity: r.default_order_quantity,
         default_issue_quantity: r.default_issue_quantity,

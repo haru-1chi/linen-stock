@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }) => {
       if (profile.data.verify === 0) {
         navigate("/profile");
       } else {
-        navigate("/linen-stock");
+        navigate("/linen/dashboard");
       }
     } catch (err) {
       throw err;

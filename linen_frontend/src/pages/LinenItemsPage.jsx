@@ -81,6 +81,7 @@ function LinenItemsPage() {
       code: "",
       linen_name: "",
       unit: "",
+      linen_type: null,
       default_order_quantity: "",
       default_issue_quantity: "",
       price: "",
@@ -93,6 +94,7 @@ function LinenItemsPage() {
         code: "",
         linen_name: "",
         unit: "",
+        linen_type: null,
         default_order_quantity: "",
         default_issue_quantity: "",
         price: "",
@@ -112,6 +114,7 @@ function LinenItemsPage() {
         code: "",
         linen_id: null,
         unit: "",
+        linen_type: null,
         default_order_quantity: "",
         default_issue_quantity: "",
         price: "",
@@ -143,6 +146,7 @@ function LinenItemsPage() {
         code: r.code?.trim(),
         linen_name: r.linen_name?.trim(),
         unit: r.unit?.trim(),
+        linen_type: r.linen_type?.trim(),
         default_order_quantity: Number(r.default_order_quantity) || 0,
         default_issue_quantity: Number(r.default_issue_quantity) || 0,
         price: Number(r.price) || 0,
@@ -190,6 +194,7 @@ function LinenItemsPage() {
                 code: newData.code,
                 linen_name: newData.linen_name,
                 unit: newData.unit,
+                linen_type: newData.linen_type,
                 default_order_quantity: newData.default_order_quantity,
                 default_order_issue: newData.default_order_issue,
                 price: newData.price,
@@ -332,6 +337,12 @@ function LinenItemsPage() {
         >
           <Column field="code" header="ED" sortable />
 
+          <Column
+            field="linen_type"
+            header="ชื่อรายการ"
+            editor={linenNameEditor}
+            sortable
+          />
           <Column
             field="linen_name"
             header="ชื่อรายการ"

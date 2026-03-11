@@ -6,6 +6,10 @@ function LinenMasterDashboard() {
   // เก็บ Object ผ้าที่ถูกเลือก เพื่อเอาไปใช้ได้ทั้ง ID และชื่อ
   const [selectedLinen, setSelectedLinen] = useState(null);
 
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const triggerRefresh = () => setRefreshKey((prev) => prev + 1);
+
   const handleSelectLinen = (linen) => {
     setSelectedLinen(linen);
   };
@@ -17,13 +21,17 @@ function LinenMasterDashboard() {
         <LinenStockSideStack
           onSelect={handleSelectLinen}
           selectedId={selectedLinen?.id}
+          refreshKey={refreshKey}
         />
       </div>
 
       {/* ฝั่งขวา: ManageStock (ขยายเต็มพื้นที่) */}
       <div className="flex-1 flex flex-col bg-white overflow-hidden">
         <div className="flex-1 overflow-y-auto">
-          <ManageStock externalFilterId={selectedLinen?.linen_id} />
+          <ManageStock
+            externalFilterId={selectedLinen?.linen_id}
+            onSuccess={triggerRefresh}
+          />
         </div>
       </div>
     </div>

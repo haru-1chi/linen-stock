@@ -30,6 +30,7 @@ exports.createLinenItem = async (req, res) => {
         const values = dataArray.map((item) => [
             item.linen_name.trim(),
             item.code.trim(),
+            item.linen_type.trim(),
             item.unit.trim(),
             Number(item.default_order_quantity) || 0,
             Number(item.default_issue_quantity) || 0,
@@ -40,7 +41,7 @@ exports.createLinenItem = async (req, res) => {
 
         const sql = `
       INSERT INTO linen_items 
-      (linen_name, code, unit, default_order_quantity, default_issue_quantity, price, created_by, updated_by) 
+      (linen_name, code, unit, linen_type, default_order_quantity, default_issue_quantity, price, created_by, updated_by) 
       VALUES ?
     `;
 
@@ -85,6 +86,7 @@ exports.updateLinenItem = async (req, res) => {
             "linen_name",
             "code",
             "unit",
+            "linen_type",
             "default_order_quantity",
             "default_issue_quantity",
             "price",
@@ -191,6 +193,7 @@ exports.getLinenItem = async (req, res) => {
                     ELSE l.linen_name
                 END AS linen_name,
                 l.unit,
+                l.linen_type,
                 l.default_order_quantity, 
                 l.default_issue_quantity,
                 l.price,
@@ -290,6 +293,7 @@ exports.searchLinenItems = async (req, res) => {
         li.id,
         li.code,
         li.linen_name,
+        li.linen_type,
         li.unit,
         li.default_order_quantity,
         li.default_issue_quantity,
@@ -335,13 +339,14 @@ exports.createStock = async (req, res) => {
                 const [linenResult] = await connection.query(
                     `
                     INSERT INTO linen_items 
-                    (code, linen_name, unit, default_order_quantity, default_issue_quantity, price, created_by, updated_by)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    (code, linen_name, unit, linen_type, default_order_quantity, default_issue_quantity, price, created_by, updated_by)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     `,
                     [
                         item.code,
                         item.linen_name,
                         item.unit,
+                        item.linen_type,
                         item.default_order_quantity || 0,
                         item.default_issue_quantity || 0,
                         item.price || 0,
@@ -421,6 +426,7 @@ exports.updateStock = async (req, res) => {
         linen_id,
         linen_name,
         unit,
+        linen_type,
         default_order_quantity,
         default_issue_quantity,
         price,
@@ -478,6 +484,7 @@ exports.updateStock = async (req, res) => {
             SET
                 linen_name = ?,
                 unit = ?,
+                 linen_type = ?,
                 default_order_quantity = ?,
                 default_issue_quantity = ?,
                 price = ?,
@@ -488,6 +495,7 @@ exports.updateStock = async (req, res) => {
         await connection.query(updateLinenSQL, [
             linen_name,
             unit,
+            linen_type,
             default_order_quantity || 0,
             default_issue_quantity || 0,
             price || 0,
@@ -620,6 +628,7 @@ exports.getStock = async (req, res) => {
         l.code,
         l.linen_name,
         l.unit,
+        l.linen_type,
         l.default_order_quantity,
         l.default_issue_quantity,
         l.price,
@@ -761,6 +770,29 @@ exports.getPartner = async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Failed to fetch partners",
+            error: err.message,
+        });
+    }
+};
+
+exports.getLinenType = async (req, res) => {
+    try {
+        const sql = `
+            SELECT 
+                id,
+                type_name
+            FROM linen_type
+            ORDER BY type_name ASC
+        `;
+
+        const [rows] = await db.query(sql);
+
+        res.status(200).json(rows || []);
+    } catch (err) {
+        console.error("❌ Error fetching linen types:", err);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch linen types",
             error: err.message,
         });
     }

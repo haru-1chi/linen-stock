@@ -594,6 +594,7 @@ exports.getStock = async (req, res) => {
         const includeDeleted = req.query.includeDeleted === "true";
         const linenId = req.query.linen_id;
         const stockType = req.query.stock_type;
+        const linenType = req.query.linen_type;
 
         let conditions = [];
         let params = [];
@@ -601,6 +602,11 @@ exports.getStock = async (req, res) => {
         // Soft delete filter
         if (!includeDeleted) {
             conditions.push("s.deleted_at IS NULL");
+        }
+
+        if (linenType) {
+            conditions.push("l.linen_type = ?");
+            params.push(Number(linenType));
         }
 
         // Filter by linen_id

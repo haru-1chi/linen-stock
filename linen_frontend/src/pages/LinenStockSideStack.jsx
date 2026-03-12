@@ -18,6 +18,8 @@ import { IconField } from "primereact/iconfield";
 import { InputIcon } from "primereact/inputicon";
 import { Dropdown } from "primereact/dropdown";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { FileUpload } from "primereact/fileupload";
+import { handleLinenFileUpload } from "../utils/importUtils";
 import {
   faMagnifyingGlass,
   faPlus,
@@ -40,10 +42,24 @@ function LinenStockSideStack({ onSelect, selectedId, refreshKey }) {
   const [linenItemsActive, setLinenItemsActive] = useState([]);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [sortOrder, setSortOrder] = useState("asc");
+
   const [linenTypeOptions, setLinenTypeOptions] = useState([]);
+  const [selectedLinenType, setSelectedLinenType] = useState(null);
 
   const [editDialogVisible, setEditDialogVisible] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+
+  const fileUploadRef = useRef(null);
+
+  const onImportExcel = (event) => {
+    handleLinenFileUpload({
+      event,
+      showToast,
+      fileUploadRef,
+      setRows,
+      linenTypeOptions: linenTypeOptions.filter((o) => o.value !== null), // ตัด "ประเภททั้งหมด" ออก
+    });
+  };
 
   const showToast = useCallback((severity, summary, detail) => {
     toast.current?.show({ severity, summary, detail, life: 3000 });
@@ -63,10 +79,13 @@ function LinenStockSideStack({ onSelect, selectedId, refreshKey }) {
       try {
         const res = await axios.get(`${API_BASE}/stock/linen-type`);
 
-        const options = res.data.map((item) => ({
-          label: item.type_name,
-          value: item.id,
-        }));
+        const options = [
+          { label: "ประเภททั้งหมด", value: null },
+          ...res.data.map((item) => ({
+            label: item.type_name,
+            value: item.id,
+          })),
+        ];
 
         setLinenTypeOptions(options);
       } catch (err) {
@@ -79,15 +98,21 @@ function LinenStockSideStack({ onSelect, selectedId, refreshKey }) {
 
   const fetchStock = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_BASE}/stock/linen-stock`);
+      const res = await axios.get(`${API_BASE}/stock/linen-stock`, {
+        params: {
+          linen_type: selectedLinenType,
+        },
+      });
+
       setStock(res.data);
+
       if (res.data.length > 0 && !selectedId) {
         onSelect(res.data[0]);
       }
     } catch (err) {
       showToast("error", "ผิดพลาด", "ไม่สามารถดึงข้อมูลได้");
     }
-  }, [selectedId, onSelect, showToast]);
+  }, [selectedId, onSelect, showToast, selectedLinenType]);
 
   const handleSaveEdit = async () => {
     try {
@@ -159,7 +184,7 @@ function LinenStockSideStack({ onSelect, selectedId, refreshKey }) {
   useEffect(() => {
     fetchStock();
     fetchLinenItems();
-  }, [fetchStock, fetchLinenItems, refreshKey]);
+  }, [fetchStock, fetchLinenItems, refreshKey, selectedLinenType]);
 
   // --- Logic เพิ่มข้อมูล ---
   const initialRow = {
@@ -289,7 +314,24 @@ function LinenStockSideStack({ onSelect, selectedId, refreshKey }) {
       </div>
 
       {/* List รายการผ้า: ปรับ Card UI */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-100">
+      <div className="flex-1 overflow-y-auto p-4  pt-2 space-y-3 bg-slate-100">
+        <div className="flex justify-end">
+          <Dropdown
+            value={selectedLinenType}
+            options={linenTypeOptions}
+            optionLabel="label"
+            optionValue="value"
+            placeholder="ประเภททั้งหมด"
+            className="w-fit"
+            onChange={(e) => setSelectedLinenType(e.value)}
+            pt={{
+              input: {
+                style: { padding: "5px 10px" },
+              },
+            }}
+          />
+        </div>
+
         {sortedStock.map((item) => (
           <div
             key={item.id}
@@ -354,7 +396,6 @@ function LinenStockSideStack({ onSelect, selectedId, refreshKey }) {
             </div>
           </div>
         ))}
-
         {sortedStock.length === 0 && (
           <div className="text-center py-20 text-slate-300">
             <FontAwesomeIcon icon={faBoxOpen} size="3x" className="mb-4" />
@@ -517,7 +558,18 @@ function LinenStockSideStack({ onSelect, selectedId, refreshKey }) {
         addRow={addRow}
         removeRow={removeRow}
         dialogFooterTemplate={
-          <div className="flex justify-end border-t pt-4 border-slate-50">
+          <div className="flex justify-between border-t pt-4 border-slate-50">
+            <FileUpload
+              ref={fileUploadRef}
+              mode="basic"
+              name="demo[]"
+              accept=".xlsx, .xls, .csv"
+              maxFileSize={1000000}
+              onSelect={onImportExcel}
+              auto
+              chooseLabel="Import Excel"
+              className="p-button-outlined p-button-secondary rounded-xl"
+            />
             <Button
               label="ยืนยันเพิ่มเข้าคลัง"
               severity="success"

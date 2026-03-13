@@ -39,7 +39,7 @@ function TopNavBar() {
             <FontAwesomeIcon icon={faUser} size="sm" />
           </div>
           <span className="font-bold hidden sm:inline text-sm">
-            {user?.name || "ตั้งค่าโปรไฟล์"}
+            {`${user?.name} ${user?.lastname}` || "ตั้งค่าโปรไฟล์"}
           </span>
         </Link>
 

@@ -5,7 +5,7 @@ export const handleLinenFileUpload = ({
     showToast,
     fileUploadRef,
     setRows,
-    linenTypeOptions, // ส่ง options เข้ามาเพื่อแมทช์ Label เป็น ID
+    linenTypeOptions,
 }) => {
     const file = event.files?.[0];
     if (!file) return;
@@ -23,46 +23,53 @@ export const handleLinenFileUpload = ({
         }
 
         const importedRows = [];
-        
-        // เริ่มวนลูป (ข้าม header บรรทัดแรกๆ ไปก่อน หรือจะเริ่มที่ 0 แล้วเช็ค data เอา)
+
         for (let i = 0; i < jsonData.length; i++) {
             const row = jsonData[i];
+            // ตรวจสอบว่ามีข้อมูลอย่างน้อยถึง Column E (Index 4)
             if (!row || row.length < 5) continue;
 
-            const typeLabel = String(row[2] || "").trim(); // Column C
-            const nameLabel = String(row[4] || "").trim(); // Column E
+            const typeLabel = String(row[2] || "").trim(); // Column C (Index 2)
+            const codeVal = String(row[3] || "").trim(); // Column D (Index 3)
+            const nameLabel = String(row[4] || "").trim(); // Column E (Index 4)
+            const priceVal = row[6] || 0;                 // Column G (Index 6)
+            const noteVal = String(row[8] || "").trim(); // Column I (Index 8)
 
-            // ถ้าไม่มีชื่อรายการเลย ให้ข้าม
+            // ถ้าไม่มีชื่อรายการเลย ให้ข้าม (ป้องกันบรรทัดว่างที่อาจติดมา)
             if (!nameLabel) continue;
 
-            // แมทช์ประเภทจาก Label เป็น ID (เช่น "แต่งกาย" -> 1)
-            const matchedType = linenTypeOptions.find(opt => 
+            // แมทช์ประเภทจาก Label เป็น ID
+            const matchedType = linenTypeOptions.find(opt =>
                 opt.label === typeLabel
             );
 
             importedRows.push({
-                code: "", // ให้ user กรอกเองหรือปล่อยว่าง
+                code: codeVal,
                 linen_type: matchedType ? matchedType.value : null,
                 linen_id: null,
-                linen_name: nameLabel, // ใส่มาให้หมดตามคำขอ (รวมหัวข้อแปลกๆ)
-                remain: 0,
-                price: 0,
-                unit: String(row[5] || "").trim(), // แถม: หน่วยมักอยู่ Column F
+                linen_name: nameLabel,
+                remain: 0, // เริ่มต้นที่ 0 ให้ User ตรวจสอบ/กรอกเอง
+                price: priceVal,
+                unit: String(row[5] || "").trim(), // Column F (Index 5)
                 default_order_quantity: 0,
                 default_issue_quantity: 0,
-                note: "",
+                note: noteVal,
             });
         }
 
         if (importedRows.length > 0) {
-            // กรองแถวว่างๆ ของเดิมออกก่อน แล้วค่อยใส่ข้อมูลที่ Import เข้าไป
             setRows((prev) => {
-                const filteredPrev = prev.filter(r => r.linen_name !== "" || r.remain !== "");
+                // กรองแถวเริ่มต้นที่ยังไม่ได้กรอกข้อมูลออก เพื่อไม่ให้มีแถวว่างเกินจำเป็น
+                const filteredPrev = prev.filter(r =>
+                    r.linen_name !== "" ||
+                    r.remain !== "" ||
+                    r.code !== ""
+                );
                 return [...filteredPrev, ...importedRows];
             });
             showToast("success", "นำเข้าสำเร็จ", `โหลดข้อมูล ${importedRows.length} รายการเรียบร้อย`);
         }
-        
+
         fileUploadRef.current?.clear();
     };
 

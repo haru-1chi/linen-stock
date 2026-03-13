@@ -47,12 +47,12 @@ export const AuthProvider = ({ children }) => {
       });
       const profile = await profileRes.json();
       setUser(profile.data);
-
-      if (profile.data.verify === 0) {
-        navigate("/profile");
-      } else {
-        navigate("/linen/dashboard");
-      }
+      navigate("/linen/dashboard");
+      // if (profile.data.verify === 0) {
+      //   navigate("/profile");
+      // } else {
+      //   navigate("/linen/dashboard");
+      // }
     } catch (err) {
       throw err;
     }

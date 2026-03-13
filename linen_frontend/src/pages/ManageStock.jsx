@@ -512,11 +512,7 @@ function ManageStock({ externalFilterId, onSuccess }) {
           onClick={hideDialog}
           className="p-button-text p-button-secondary"
         />
-        <Button
-          label="บันทึกข้อมูล"
-          onClick={handleSubmit}
-          autoFocus
-        />
+        <Button label="บันทึกข้อมูล" onClick={handleSubmit} autoFocus />
       </div>
     );
   };
@@ -850,12 +846,15 @@ function ManageStock({ externalFilterId, onSuccess }) {
               dropdown
               placeholder="เลือกหรือพิมพ์รายละเอียด"
               forceSelection={false}
-              onChange={(e) =>
+              onChange={(e) => {
+                const value =
+                  typeof e.value === "object" ? e.value.label : e.value;
+
                 setFormData((prev) => ({
                   ...prev,
-                  partner_name: e.value,
-                }))
-              }
+                  partner_name: value,
+                }));
+              }}
             />
             {submitted && !formData.partner_name && (
               <small className="p-error">กรุณาระบุรายละเอียด</small>

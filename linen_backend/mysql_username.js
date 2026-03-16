@@ -16,7 +16,9 @@ const pool = mysql.createPool({
   decimalNumbers: true,
 
   enableKeepAlive: true,
-  keepAliveInitialDelay: 0,
+  keepAliveInitialDelay: 0, // 10 seconds
+  idleTimeout: 60000, // 60 seconds
+  maxIdle: 10,
 });
 
 pool.on("error", (err) => {

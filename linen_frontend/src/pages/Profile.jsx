@@ -58,22 +58,21 @@ function Profile() {
 
   const toast = useRef(null);
 
-  const showToast = (severity, summary, detail) => {
+  const showToast = useCallback((severity, summary, detail) => {
     toast.current?.show({
       severity,
       summary,
       detail,
       life: 3000,
     });
-  };
+  }, []);
 
   useEffect(() => {
     if (user) {
-      const [firstname, lastname = ""] = user.name?.split(" ") || ["", ""];
       setFormValues({
-        firstname,
-        lastname,
-        username: user.username,
+        firstname: user.name,
+        lastname: user.lastname,
+        username: user.id,
       });
     }
   }, [user]);
@@ -230,10 +229,9 @@ function Profile() {
 
   const handleCancel = () => {
     if (user) {
-      const [firstname, lastname = ""] = user.name?.split(" ") || ["", ""];
       setFormValues({
-        firstname,
-        lastname,
+        firstname: user.name,
+        lastname: user.lastname,
         username: user.username,
       });
     }
@@ -241,7 +239,7 @@ function Profile() {
   };
 
   return (
-    <div className="Home-page overflow-hidden min-h-dvh flex flex-col justify-between">
+    <div className="Home-page overflow-hidden min-h-dvh flex flex-col items-center">
       <Toast ref={toast} />
       <ConfirmDialog />
       <div
@@ -250,7 +248,7 @@ function Profile() {
         <div className="flex items-center mb-5">
           <h5 className="text-2xl font-semibold">บัญชีของฉัน</h5>
         </div>
-        <div className="card max-w-125 bg-white p-5 rounded-xl shadow-md">
+        <div className="card w-125 bg-white p-5 rounded-xl shadow-md">
           {user.verify === 0 && (
             <div className="mb-4">
               <Message
@@ -369,10 +367,10 @@ function Profile() {
                   {formValues.firstname} {formValues.lastname}
                 </p>
               </div>
-              <div className="grid grid-cols-4 mt-8">
+              {/* <div className="grid grid-cols-4 mt-8">
                 <p>สิทธิ์การใช้งาน</p>
                 <p className="col-span-3">{user.role}</p>
-              </div>
+              </div> */}
               <p className="text-xl font-semibold mt-8">ข้อมูลบัญชี</p>
               <div className="mt-8 grid grid-cols-4">
                 <p>username</p>
@@ -499,7 +497,7 @@ function Profile() {
             </>
           ) : (
             <div className="mt-8 grid grid-cols-4">
-              <p>รหัสผ่าน</p>
+              {/* <p>รหัสผ่าน</p>
               <div className="col-span-3">
                 <Button
                   onClick={() => setVisible(true)}
@@ -507,7 +505,7 @@ function Profile() {
                   label="เปลี่ยนรหัสผ่าน"
                   style={{ padding: "0" }}
                 />
-              </div>
+              </div> */}
             </div>
           )}
           <Dialog

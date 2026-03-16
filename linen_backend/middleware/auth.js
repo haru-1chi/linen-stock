@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const db = require("../db/db.js");
+const db = require("../db/hospitalDB.js");
 const JWT_SECRET = process.env.JWT_SECRET || "secret_key";
 
 exports.authAndRole = (...allowedRoles) => {
@@ -34,13 +34,12 @@ exports.authAndRole = (...allowedRoles) => {
 
       //ใช้ mysql2/promise แบบถูกต้อง เพื่อป้องกัน SQL Injection
       const sql = `
-        SELECT u.id, u.username, u.name, u.verify, u.role, r.role_name, u.assign
-        FROM user u
-        LEFT JOIN role r ON u.role = r.id
-        WHERE u.username = ?
+        SELECT u.id, u.name, u.lastname
+        FROM tb_bp_person u
+        WHERE u.id = ?
         LIMIT 1
       `;
-      const [result] = await db.query(sql, [decoded.username]);
+      const [result] = await db.query(sql, [decoded.id]);
       //parameterized query ป้องกัน SQL Injection
 
       if (!result.length) {

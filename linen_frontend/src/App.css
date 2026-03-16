@@ -19,11 +19,21 @@ body {
   color: rgb(85, 85, 85);
 }
 
-
+.p-input-icon {
+  transform: translateY(-17%);
+}
 .p-password .p-icon-field {
   width: 100%;
 }
 
 .p-password .p-inputtext {
   width: 100%;
+}
+
+.swal-high-zindex {
+  z-index: 9999 !important;
+}
+
+.swal2-container {
+  z-index: 9999 !important;
 }

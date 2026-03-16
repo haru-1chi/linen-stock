@@ -16,8 +16,9 @@ import {
   faXmark,
   faMagnifyingGlass,
   faFileImport,
+  faFileExport,
 } from "@fortawesome/free-solid-svg-icons";
-
+import { exportLinenItemsToExcel } from "../utils/exportLinenItemsExcel";
 const API_BASE =
   import.meta.env.VITE_REACT_APP_API || "http://localhost:3000/api";
 
@@ -29,19 +30,18 @@ function LinenItemsPage() {
   const [linenItemsActive, setLinenItemsActive] = useState([]);
   const [dialogVisible, setDialogVisible] = useState(false);
 
-  const showToast = (severity, summary, detail) => {
+  const showToast = useCallback((severity, summary, detail) => {
     toast.current?.show({
       severity,
       summary,
       detail,
       life: 3000,
     });
-  };
+  }, []);
 
   const fetchLinenItems = useCallback(async () => {
     try {
       const res = await axios.get(`${API_BASE}/stock/linen-item`);
-      console.log(res);
       setLinenItems(res.data);
     } catch (err) {
       showToast("error", "ผิดพลาด", "ไม่สามารถดึงข้อมูลได้");
@@ -81,7 +81,9 @@ function LinenItemsPage() {
       code: "",
       linen_name: "",
       unit: "",
+      linen_type: null,
       default_order_quantity: "",
+      default_issue_quantity: "",
       price: "",
     },
   ]);
@@ -92,7 +94,9 @@ function LinenItemsPage() {
         code: "",
         linen_name: "",
         unit: "",
+        linen_type: null,
         default_order_quantity: "",
+        default_issue_quantity: "",
         price: "",
       },
     ]);
@@ -110,7 +114,9 @@ function LinenItemsPage() {
         code: "",
         linen_id: null,
         unit: "",
+        linen_type: null,
         default_order_quantity: "",
+        default_issue_quantity: "",
         price: "",
         stock_type: "new",
       },
@@ -140,7 +146,9 @@ function LinenItemsPage() {
         code: r.code?.trim(),
         linen_name: r.linen_name?.trim(),
         unit: r.unit?.trim(),
+        linen_type: r.linen_type?.trim(),
         default_order_quantity: Number(r.default_order_quantity) || 0,
+        default_issue_quantity: Number(r.default_issue_quantity) || 0,
         price: Number(r.price) || 0,
       }));
 
@@ -186,7 +194,9 @@ function LinenItemsPage() {
                 code: newData.code,
                 linen_name: newData.linen_name,
                 unit: newData.unit,
+                linen_type: newData.linen_type,
                 default_order_quantity: newData.default_order_quantity,
+                default_order_issue: newData.default_order_issue,
                 price: newData.price,
               },
             ],
@@ -209,6 +219,26 @@ function LinenItemsPage() {
     <InputText
       value={options.value ?? ""}
       onChange={(e) => options.editorCallback(e.target.value)}
+      className="w-full"
+      autoFocus
+    />
+  );
+
+  const priceEditor = (options) => (
+    <InputText
+      value={options.value ?? ""}
+      onChange={(e) => options.editorCallback(e.target.value)}
+      keyfilter="money"
+      className="w-full"
+      autoFocus
+    />
+  );
+
+  const numberEditor = (options) => (
+    <InputText
+      value={options.value ?? ""}
+      onChange={(e) => options.editorCallback(e.target.value)}
+      keyfilter="int"
       className="w-full"
       autoFocus
     />
@@ -259,6 +289,27 @@ function LinenItemsPage() {
     [confirmDelete],
   );
 
+  const header = (
+    <div className="flex justify-between">
+      <Button
+        type="button"
+        label="Export Excel"
+        severity="info"
+        onClick={() => exportLinenItemsToExcel(linenItems)}
+        data-pr-tooltip="XLS"
+        className="p-button-icon-right-custom"
+      >
+        {" "}
+        <FontAwesomeIcon icon={faFileExport} style={{ marginLeft: "0.5rem" }} />
+      </Button>
+      <Button
+        label="+ เพิ่มข้อมูลผ้า"
+        onClick={() => setDialogVisible(true)}
+        severity="success"
+      />
+    </div>
+  );
+
   return (
     <div className="overflow-hidden min-h-dvh flex flex-col justify-between">
       <Toast ref={toast} />
@@ -268,16 +319,11 @@ function LinenItemsPage() {
       >
         <div className="flex justify-between items-center mb-3">
           <h5 className="text-2xl font-semibold">รายชื่อผ้า</h5>
-          <div className="flex justify-between gap-3">
-            <Button
-              label="+ เพิ่มข้อมูลผ้า"
-              onClick={() => setDialogVisible(true)}
-              severity="success"
-            />
-          </div>
+          <div className="flex justify-between gap-3"></div>
         </div>
 
         <DataTable
+          header={header}
           dataKey="id"
           editMode="row"
           onRowEditComplete={onRowEditComplete}
@@ -291,6 +337,12 @@ function LinenItemsPage() {
         >
           <Column field="code" header="ED" sortable />
 
+          <Column
+            field="linen_type"
+            header="ชื่อรายการ"
+            editor={linenNameEditor}
+            sortable
+          />
           <Column
             field="linen_name"
             header="ชื่อรายการ"
@@ -308,14 +360,19 @@ function LinenItemsPage() {
           <Column
             field="default_order_quantity"
             header="จำนวนสั่ง(ค่าเริ่มต้น)"
-            editor={linenNameEditor}
+            editor={numberEditor}
             sortable
           />
-
+          <Column
+            field="default_issue_quantity"
+            header="จำนวนรับ(ค่าเริ่มต้น)"
+            editor={numberEditor}
+            sortable
+          />
           <Column
             field="price"
             header="ราคา(ต่อหน่วย)"
-            editor={linenNameEditor}
+            editor={priceEditor}
             sortable
           />
           <Column

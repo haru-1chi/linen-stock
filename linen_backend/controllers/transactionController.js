@@ -1,7 +1,8 @@
 const db = require("../db/db.js");
 
 exports.createLinenTransaction = async (req, res) => {
-    const connection = await db.getConnection();
+    let connection;
+    let transactionStarted = false;
 
     try {
         const dataArray = req.body;
@@ -14,7 +15,9 @@ exports.createLinenTransaction = async (req, res) => {
             });
         }
 
+        connection = await db.getConnection();
         await connection.beginTransaction();
+        transactionStarted = true;
 
         const priceAlerts = []; // 🔔 เก็บรายการแจ้งเตือนราคา
 
@@ -87,7 +90,23 @@ exports.createLinenTransaction = async (req, res) => {
                     : currentRemain - amount;
 
             if (newBalance < 0) {
-                throw new Error("จำนวนคงเหลือไม่พอสำหรับการจ่าย");
+                const [unitRows] = await connection.query(
+                    `SELECT unit FROM linen_items WHERE id = ?`,
+                    [item.linen_id]
+                );
+
+                const unit = unitRows.length > 0 ? unitRows[0].unit : "";
+
+                const error = new Error("INSUFFICIENT_STOCK");
+                error.statusCode = 400;
+                error.details = {
+                    linen_id: item.linen_id,
+                    currentRemain,
+                    requested: amount,
+                    unit,
+                };
+
+                throw error;
             }
 
             // 📝 Insert transaction
@@ -136,24 +155,35 @@ exports.createLinenTransaction = async (req, res) => {
         }
 
         await connection.commit();
-        connection.release();
 
         res.status(201).json({
             success: true,
-            message: "✅ Transaction(s) inserted successfully",
-            priceAlerts, // 🔔 ส่งกลับไปให้ frontend ยิง swal
+            message: "Transaction(s) inserted successfully",
+            priceAlerts,
         });
 
     } catch (err) {
-        await connection.rollback();
-        connection.release();
+        if (connection && transactionStarted) {
+            await connection.rollback();
+        }
 
-        console.error("❌ Error inserting linen transactions:", err);
+        if (!err.statusCode || err.statusCode >= 500) {
+            console.error("Server Error:", err);
+        }
 
-        res.status(500).json({
+        res.status(err.statusCode || 500).json({
             success: false,
-            message: err.message || "Failed to insert transactions",
+            errorType: err.message,
+            message:
+                err.message === "INSUFFICIENT_STOCK"
+                    ? "จำนวนคงเหลือไม่เพียงพอ"
+                    : err.message || "Failed to insert transactions",
+            details: err.details || null,
         });
+    } finally {
+        if (connection) {
+            connection.release();
+        }
     }
 };
 
@@ -167,6 +197,8 @@ exports.getLinenTransactions = async (req, res) => {
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 50;
         const offset = (page - 1) * limit;
+        const sortField = req.query.sortField || "created_at";
+        const sortOrder = Number(req.query.sortOrder) === -1 ? "DESC" : "ASC";
 
         let conditions = [];
         let params = [];
@@ -182,7 +214,10 @@ exports.getLinenTransactions = async (req, res) => {
         }
 
         if (startDate && endDate) {
-            conditions.push("t.date BETWEEN ? AND ?");
+            conditions.push(`
+        t.created_at >= ? 
+        AND t.created_at < DATE_ADD(?, INTERVAL 1 DAY)
+    `);
             params.push(startDate, endDate);
         }
 
@@ -190,6 +225,43 @@ exports.getLinenTransactions = async (req, res) => {
             conditions.length > 0
                 ? "WHERE " + conditions.join(" AND ")
                 : "";
+
+        const countSql = `
+  SELECT COUNT(*) as total
+  FROM linen_transactions t
+  LEFT JOIN linen_items l ON t.linen_id = l.id
+  ${where}
+`;
+        const summarySql = `
+            SELECT 
+                SUM(CASE WHEN t.status_type = 'IN' THEN t.amount ELSE 0 END) as total_in,
+                SUM(CASE WHEN t.status_type = 'OUT' THEN t.amount ELSE 0 END) as total_out
+            FROM linen_transactions t
+            ${where}
+        `;
+
+        const [[summary]] = await db.query(summarySql, params);
+
+        const balanceSql = `
+            SELECT balance_after 
+            FROM linen_transactions t
+            ${where}
+            ORDER BY t.created_at DESC, t.id DESC
+            LIMIT 1
+        `;
+        const [[latestBalance]] = await db.query(balanceSql, params);
+
+        const [[{ total }]] = await db.query(countSql, params);
+
+        const allowedSortFields = [
+            "created_at",
+            "price",
+            "balance_after",
+        ];
+
+        const finalSortField = allowedSortFields.includes(sortField)
+            ? sortField
+            : "created_at";
 
         const sql = `
       SELECT 
@@ -202,11 +274,13 @@ exports.getLinenTransactions = async (req, res) => {
         t.payer,
         t.receiver,
         t.balance_after,   -- ✅ ใช้ snapshot balance
-
+t.created_at,
         l.code,
         l.linen_name,
         l.unit,
-        l.default_order_quantity
+        l.default_order_quantity,
+            l.linen_type,
+        l.default_issue_quantity
 
       FROM linen_transactions t
       LEFT JOIN linen_items l 
@@ -214,9 +288,12 @@ exports.getLinenTransactions = async (req, res) => {
 
       ${where}
 
-      ORDER BY t.date DESC, t.id DESC
-      LIMIT ? OFFSET ?
+  ORDER BY t.${finalSortField} ${sortOrder}, t.id ${sortOrder}
+    LIMIT ? OFFSET ?
     `;
+
+
+
 
         const [rows] = await db.query(sql, [...params, limit, offset]);
 
@@ -224,6 +301,12 @@ exports.getLinenTransactions = async (req, res) => {
             success: true,
             page,
             limit,
+            total,
+            summary: {
+                totalIn: Number(summary.total_in || 0),
+                totalOut: Number(summary.total_out || 0),
+                latestBalance: latestBalance ? latestBalance.balance_after : 0
+            },
             data: rows || [],
         });
 

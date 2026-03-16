@@ -79,7 +79,7 @@ function Login() {
             onClick={handleLogin}
             loading={loading}
           >
-            <span className={`${loading ? "ml-2" : ""}`}>เข้าสู่ระบบ</span>
+            <span className={`${loading ? "ml-2" : ""}`}>คลิ๊กเข้าสู่ระบบได้เลย</span>
           </Button>
         </div>
 

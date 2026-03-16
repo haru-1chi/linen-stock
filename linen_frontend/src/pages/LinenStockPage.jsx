@@ -16,8 +16,9 @@ import {
   faXmark,
   faMagnifyingGlass,
   faFileImport,
+  faFileExport,
 } from "@fortawesome/free-solid-svg-icons";
-
+import { exportStockToExcel } from "../utils/exportStockUtils";
 const API_BASE =
   import.meta.env.VITE_REACT_APP_API || "http://localhost:3000/api";
 
@@ -26,17 +27,18 @@ function LinenStockPage() {
   const toast = useRef(null);
 
   const [stock, setStock] = useState([]);
+
   const [linenItemsActive, setLinenItemsActive] = useState([]);
   const [dialogVisible, setDialogVisible] = useState(false);
 
-  const showToast = (severity, summary, detail) => {
+  const showToast = useCallback((severity, summary, detail) => {
     toast.current?.show({
       severity,
       summary,
       detail,
       life: 3000,
     });
-  };
+  }, []);
 
   const fetchStock = useCallback(async () => {
     try {
@@ -77,28 +79,23 @@ function LinenStockPage() {
   }, []);
 
   //add
-  const [rows, setRows] = useState([
-    {
-      id: 1,
-      linen_id: null,
-      remain: "",
-      unit: "",
-      note: "",
-      stock_type: "new",
-    },
-  ]);
+  const initialRow = {
+    code: "",
+    linen_type: null,
+    linen_id: null,
+    linen_name: "",
+    remain: "",
+    price: "",
+    unit: "",
+    default_order_quantity: "",
+    default_issue_quantity: "",
+    note: "",
+  };
+
+  const [rows, setRows] = useState([initialRow]);
 
   const resetRows = useCallback(() => {
-    setRows([
-      {
-        id: 1,
-        linen_id: null,
-        remain: "",
-        unit: "",
-        note: "",
-        stock_type: "new",
-      },
-    ]);
+    setRows([initialRow]);
   }, []);
 
   const removeRow = useCallback((rowIndex) => {
@@ -106,17 +103,7 @@ function LinenStockPage() {
   }, []);
 
   const addRow = useCallback(() => {
-    setRows((prev) => [
-      ...prev,
-      {
-        id: prev.length + 1,
-        linen_id: null,
-        remain: "",
-        unit: "",
-        note: "",
-        stock_type: "new",
-      },
-    ]);
+    setRows((prev) => [...prev, initialRow]);
   }, []);
 
   const handleInputChange = useCallback((rowIndex, field, value) => {
@@ -131,7 +118,10 @@ function LinenStockPage() {
     try {
       if (
         rows.some(
-          (r) => !r.linen_id || r.remain === "" || r.remain === null,
+          (r) =>
+            (!r.linen_id && !r.linen_name) ||
+            r.remain === "" ||
+            r.remain === null,
         )
       ) {
         showToast("error", "ผิดพลาด", "กรุณากรอกข้อมูลให้ครบ");
@@ -145,6 +135,13 @@ function LinenStockPage() {
 
       const payload = rows.map((r) => ({
         linen_id: r.linen_id,
+        linen_name: r.linen_name,
+        code: r.code,
+        linen_type: r.linen_type,
+        unit: r.unit,
+        default_order_quantity: r.default_order_quantity,
+        default_issue_quantity: r.default_issue_quantity,
+        price: r.price,
         stock_type: "new",
         remain: Number(r.remain),
         note: r.note || null,
@@ -193,7 +190,6 @@ function LinenStockPage() {
             id: newData.id,
             linen_id: newData.linen_id,
             stock_type: newData.stock_type,
-            remain: Number(newData.remain),
             note: newData.note || null,
           };
 
@@ -283,6 +279,28 @@ function LinenStockPage() {
     [confirmDelete],
   );
 
+  const header = (
+    <div className="flex justify-between">
+      <Button
+        type="button"
+        label="Export Excel"
+        severity="info"
+        onClick={() => exportStockToExcel(stock)}
+        data-pr-tooltip="XLS"
+        className="p-button-icon-right-custom"
+      >
+        {" "}
+        <FontAwesomeIcon icon={faFileExport} style={{ marginLeft: "0.5rem" }} />
+      </Button>
+
+      <Button
+        label="+ เพิ่มข้อมูลผ้า"
+        onClick={() => setDialogVisible(true)}
+        severity="success"
+      />
+    </div>
+  );
+
   return (
     <div className="overflow-hidden min-h-dvh flex flex-col justify-between">
       <Toast ref={toast} />
@@ -292,16 +310,10 @@ function LinenStockPage() {
       >
         <div className="flex justify-between items-center mb-3">
           <h5 className="text-2xl font-semibold">คลังสต๊อคผ้า</h5>
-          <div className="flex justify-between gap-3">
-            <Button
-              label="+ เพิ่มข้อมูลผ้า"
-              onClick={() => setDialogVisible(true)}
-              severity="success"
-            />
-          </div>
+          <div className="flex justify-between gap-3"></div>
         </div>
-
         <DataTable
+          header={header}
           dataKey="id"
           editMode="row"
           onRowEditComplete={onRowEditComplete}
@@ -315,7 +327,7 @@ function LinenStockPage() {
         >
           <Column field="code" header="รหัส ED" sortable />
           <Column field="linen_name" header="ชื่อรายการ" sortable />
-          <Column field="remain" header="คงเหลือ" editor={remainEditor} />
+          <Column field="remain" header="คงเหลือ" sortable />
 
           <Column field="unit" header="หน่วย" />
 

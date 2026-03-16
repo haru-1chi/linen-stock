@@ -15,7 +15,9 @@ import Profile from "./pages/Profile";
 import LinenStockPage from "./pages/LinenStockPage";
 import LinenItemsPage from "./pages/LinenItemsPage";
 import Layout from "./contexts/Layout";
+import Layout_old from "./contexts/Layout_old";
 import ManageStock from "./pages/ManageStock";
+import LinenMasterDashboard from "./pages/LinenMasterDashboard";
 
 function App() {
   return (
@@ -26,6 +28,14 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route element={<Layout />}>
             <Route
+              path="/linen/dashboard"
+              element={
+                <ProtectedRoute>
+                  <LinenMasterDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/profile"
               element={
                 <ProtectedRoute>
@@ -33,8 +43,10 @@ function App() {
                 </ProtectedRoute>
               }
             />
+          </Route>
+          <Route element={<Layout_old />}>
             <Route
-              path="/manageStock"
+              path="/linen/stocks"
               element={
                 <ProtectedRoute>
                   <ManageStock />
@@ -42,7 +54,7 @@ function App() {
               }
             />
             <Route
-              path="/linen-stock"
+              path="/linen/stocks/legacy"
               element={
                 <ProtectedRoute>
                   <LinenStockPage />
@@ -50,7 +62,7 @@ function App() {
               }
             />
             <Route
-              path="/linen-item"
+              path="/linen/items"
               element={
                 <ProtectedRoute>
                   <LinenItemsPage />

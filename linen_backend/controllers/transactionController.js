@@ -19,12 +19,12 @@ exports.createLinenTransaction = async (req, res) => {
         await connection.beginTransaction();
         transactionStarted = true;
 
-        const priceAlerts = []; 
+        const priceAlerts = [];
 
         // 1. Validate data and collect unique linen IDs
         const linenIds = new Set();
         for (const item of dataArray) {
-            if (!item.linen_id || !item.amount || !item.date || !item.status_type) {
+            if (!item || !item.linen_id || !item.amount || !item.date || !item.status_type) {
                 throw new Error("กรุณากรอกข้อมูลให้ครบ (ผ้า, จำนวน, วันที่, ประเภท)");
             }
             if (!["IN", "OUT"].includes(item.status_type)) {
@@ -83,8 +83,8 @@ exports.createLinenTransaction = async (req, res) => {
 
             // Price Change Logic (Only for IN)
             if (item.status_type === "IN" && currentItemPrice !== price) {
-                 // Prevent duplicate alerts for the same linen in one batch
-                 if (!priceAlerts.some(a => a.linen_id === linenId)) {
+                // Prevent duplicate alerts for the same linen in one batch
+                if (!priceAlerts.some(a => a.linen_id === linenId)) {
                     priceAlerts.push({
                         linen_id: linenId,
                         linen_name: currentItem.name,
@@ -92,13 +92,13 @@ exports.createLinenTransaction = async (req, res) => {
                         new_price: price,
                         change_type: price > currentItemPrice ? "increase" : "decrease",
                     });
-                 }
-                 linenPriceUpdates.set(linenId, price);
+                }
+                linenPriceUpdates.set(linenId, price);
             }
 
             // Calculate Balance Logic
-            const newBalance = item.status_type === "IN" 
-                ? currentRemain + amount 
+            const newBalance = item.status_type === "IN"
+                ? currentRemain + amount
                 : currentRemain - amount;
 
             if (newBalance < 0) {
@@ -160,12 +160,12 @@ exports.createLinenTransaction = async (req, res) => {
             const stockUpdateIds = Array.from(stockMap.keys());
             let cases = '';
             const params = [];
-            
+
             for (const [id, remain] of stockMap.entries()) {
                 cases += 'WHEN id = (SELECT id FROM stock WHERE linen_id = ? LIMIT 1) THEN ? ';
                 params.push(id, remain);
             }
-            
+
             // params will end with updated_by and the list of IN ids
             params.push(userName);
             params.push(...stockUpdateIds);

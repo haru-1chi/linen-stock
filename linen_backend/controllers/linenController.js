@@ -323,24 +323,25 @@ exports.searchLinenItems = async (req, res) => {
 
 //stock
 exports.createStock = async (req, res) => {
-    const connection = await db.getConnection();
-    await connection.beginTransaction();
-
+    let connection;
     try {
         const dataArray = req.body;
         const userName = req.user?.name || "Unknown User";
 
         if (!Array.isArray(dataArray) || dataArray.length === 0) {
-             return res.status(400).json({ success: false, message: "Data is empty" });
+            return res.status(400).json({ success: false, message: "Data is empty" });
         }
 
+        connection = await db.getConnection();
+        await connection.beginTransaction();
+
         // 1. Separate items with and without linen_id
-        const itemsWithId = dataArray.filter(item => item.linen_id);
-        const itemsWithoutId = dataArray.filter(item => !item.linen_id);
+        const itemsWithId = dataArray.filter(item => item && item.linen_id);
+        const itemsWithoutId = dataArray.filter(item => item && !item.linen_id);
 
-        let finalLinenIds = []; // 👈 เก็บ linen_ids สำหรับข้อมูลตาราง stock
+        let finalLinenIds = [];
 
-        // 2. Insert LinenItems in Bulk for those without linen_id
+        // 2. Insert LinenItems in Bulk
         if (itemsWithoutId.length > 0) {
             const newLinenValues = itemsWithoutId.map(item => [
                 item.code,
@@ -362,7 +363,6 @@ exports.createStock = async (req, res) => {
             );
 
             let firstId = insertLinenResult.insertId;
-            // Map the newly inserted IDs back to the current stock insertion payload
             itemsWithoutId.forEach((item, index) => {
                  finalLinenIds.push({ ...item, linen_id: firstId + index });
             });
@@ -398,22 +398,25 @@ exports.createStock = async (req, res) => {
         });
 
     } catch (err) {
-        await connection.rollback();
+        if (connection) await connection.rollback();
 
         if (err.code === "ER_DUP_ENTRY") {
-            // Find which one caused it to return detailed error
             const dataArray = req.body;
             const item = dataArray?.[0];
-            let linenName = item?.linen_name;
+            let linenName = item?.linen_name || "Unknown";
 
-            if (item?.code) {
-                const [linen] = await connection.query(
-                    `SELECT linen_name FROM linen_items WHERE code = ? OR linen_name = ? LIMIT 1`,
-                    [item.code, item.linen_name]
-                );
+            if (item?.code && connection) {
+                try {
+                    const [linen] = await connection.query(
+                        `SELECT linen_name FROM linen_items WHERE code = ? OR linen_name = ? LIMIT 1`,
+                        [item.code, item.linen_name]
+                    );
 
-                if (linen.length > 0) {
-                    linenName = linen[0].linen_name;
+                    if (linen.length > 0) {
+                        linenName = linen[0].linen_name;
+                    }
+                } catch (queryErr) {
+                    console.error("Error during duplicate name lookup:", queryErr);
                 }
             }
 
@@ -423,52 +426,59 @@ exports.createStock = async (req, res) => {
             });
         }
 
-        console.error(err);
+        console.error("❌ createStock Error:", err);
         return res.status(500).json({
             success: false,
             message: "เกิดข้อผิดพลาดในระบบ",
+            error: err.message
         });
     } finally {
-        connection.release();
+        if (connection) connection.release();
     }
 };
 
 exports.updateStock = async (req, res) => {
-    const rows = req.body;
-
-    if (!Array.isArray(rows) || rows.length !== 1) {
-        return res.status(400).json({
-            success: false,
-            message: "Invalid request. Expected a single row.",
-        });
-    }
-
-    const row = rows[0];
-
-    const {
-        id,
-        linen_id,
-        linen_name,
-        unit,
-        linen_type,
-        default_order_quantity,
-        default_issue_quantity,
-        price,
-        stock_type,
-        note
-    } = row;
-
-    if (!id || !linen_id || !stock_type) {
-        return res.status(400).json({
-            success: false,
-            message: "กรุณากรอกข้อมูลให้ครบ",
-        });
-    }
-
-    const connection = await db.getConnection();
-    await connection.beginTransaction();
-
+    let connection;
     try {
+        const rows = req.body;
+
+        if (!Array.isArray(rows) || rows.length !== 1) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid request. Expected a single row.",
+            });
+        }
+
+        const row = rows[0];
+        if (!row) {
+            return res.status(400).json({
+                success: false,
+                message: "Data is empty",
+            });
+        }
+
+        const {
+            id,
+            linen_id,
+            linen_name,
+            unit,
+            linen_type,
+            default_order_quantity,
+            default_issue_quantity,
+            price,
+            stock_type,
+            note
+        } = row;
+
+        if (!id || !linen_id || !stock_type) {
+            return res.status(400).json({
+                success: false,
+                message: "กรุณากรอกข้อมูลให้ครบ",
+            });
+        }
+
+        connection = await db.getConnection();
+        await connection.beginTransaction();
 
         // 1️⃣ duplicate check
         const dupSQL = `
@@ -555,18 +565,16 @@ exports.updateStock = async (req, res) => {
         });
 
     } catch (err) {
-
-        await connection.rollback();
-
+        if (connection) await connection.rollback();
         console.error("❌ updateStock Error:", err);
-
         return res.status(500).json({
             success: false,
             message: "เกิดข้อผิดพลาดระหว่างอัปเดตข้อมูล",
+            error: err.message
         });
 
     } finally {
-        connection.release();
+        if (connection) connection.release();
     }
 };
 

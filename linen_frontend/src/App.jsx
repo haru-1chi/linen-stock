@@ -7,15 +7,10 @@ import "./App.css";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./contexts/ProtectedRoute";
 import Layout from "./contexts/Layout";
-import Layout_old from "./contexts/Layout_old";
-
 // Lazy loading components
 const Home = React.lazy(() => import("./pages/Home"));
 const Login = React.lazy(() => import("./pages/Login"));
 const Profile = React.lazy(() => import("./pages/Profile"));
-const LinenStockPage = React.lazy(() => import("./pages/LinenStockPage"));
-const LinenItemsPage = React.lazy(() => import("./pages/LinenItemsPage"));
-const ManageStock = React.lazy(() => import("./pages/ManageStock"));
 const LinenMasterDashboard = React.lazy(() => import("./pages/LinenMasterDashboard"));
 
 function App() {
@@ -40,32 +35,6 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Profile />
-                  </ProtectedRoute>
-                }
-              />
-            </Route>
-            <Route element={<Layout_old />}>
-              <Route
-                path="/linen/stocks"
-                element={
-                  <ProtectedRoute>
-                    <ManageStock />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/linen/stocks/legacy"
-                element={
-                  <ProtectedRoute>
-                    <LinenStockPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/linen/items"
-                element={
-                  <ProtectedRoute>
-                    <LinenItemsPage />
                   </ProtectedRoute>
                 }
               />

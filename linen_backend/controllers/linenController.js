@@ -1,163 +1,163 @@
 const db = require('../db/db.js');
 
-exports.createLinenItem = async (req, res) => {
-    try {
-        const dataArray = req.body;
-        const userName = req.user?.name || "Unknown User";
+// exports.createLinenItem = async (req, res) => {
+//     try {
+//         const dataArray = req.body;
+//         const userName = req.user?.name || "Unknown User";
 
-        if (!Array.isArray(dataArray) || dataArray.length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: "Data must be a non-empty array",
-            });
-        }
+//         if (!Array.isArray(dataArray) || dataArray.length === 0) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "Data must be a non-empty array",
+//             });
+//         }
 
-        // Validate required fields
-        for (const item of dataArray) {
-            if (
-                !item.linen_name?.trim() ||
-                !item.code?.trim() ||
-                !item.unit?.trim()
-            ) {
-                return res.status(400).json({
-                    success: false,
-                    message: "กรุณากรอกข้อมูลให้ครบ (ชื่อ, รหัส, หน่วย)",
-                });
-            }
-        }
+//         // Validate required fields
+//         for (const item of dataArray) {
+//             if (
+//                 !item.linen_name?.trim() ||
+//                 !item.code?.trim() ||
+//                 !item.unit?.trim()
+//             ) {
+//                 return res.status(400).json({
+//                     success: false,
+//                     message: "กรุณากรอกข้อมูลให้ครบ (ชื่อ, รหัส, หน่วย)",
+//                 });
+//             }
+//         }
 
-        // Prepare values for bulk insert
-        const values = dataArray.map((item) => [
-            item.linen_name.trim(),
-            item.code.trim(),
-            item.linen_type.trim(),
-            item.unit.trim(),
-            Number(item.default_order_quantity) || 0,
-            Number(item.default_issue_quantity) || 0,
-            Number(item.price) || 0,
-            userName, // created_by
-            userName, // updated_by
-        ]);
+//         // Prepare values for bulk insert
+//         const values = dataArray.map((item) => [
+//             item.linen_name.trim(),
+//             item.code.trim(),
+//             item.linen_type.trim(),
+//             item.unit.trim(),
+//             Number(item.default_order_quantity) || 0,
+//             Number(item.default_issue_quantity) || 0,
+//             Number(item.price) || 0,
+//             userName, // created_by
+//             userName, // updated_by
+//         ]);
 
-        const sql = `
-      INSERT INTO linen_items 
-      (linen_name, code, unit, linen_type, default_order_quantity, default_issue_quantity, price, created_by, updated_by) 
-      VALUES ?
-    `;
+//         const sql = `
+//       INSERT INTO linen_items 
+//       (linen_name, code, unit, linen_type, default_order_quantity, default_issue_quantity, price, created_by, updated_by) 
+//       VALUES ?
+//     `;
 
-        const [result] = await db.query(sql, [values]);
+//         const [result] = await db.query(sql, [values]);
 
-        res.json({
-            success: true,
-            message: `✅ Inserted ${result.affectedRows} record(s) successfully`,
-        });
+//         res.json({
+//             success: true,
+//             message: `✅ Inserted ${result.affectedRows} record(s) successfully`,
+//         });
 
-    } catch (err) {
-        console.error("❌ Error inserting linen items:", err);
+//     } catch (err) {
+//         console.error("❌ Error inserting linen items:", err);
 
-        if (err.code === "ER_DUP_ENTRY") {
-            return res.status(409).json({
-                success: false,
-                message: "มีข้อมูลซ้ำ (รหัสผ้าซ้ำ)",
-            });
-        }
+//         if (err.code === "ER_DUP_ENTRY") {
+//             return res.status(409).json({
+//                 success: false,
+//                 message: "มีข้อมูลซ้ำ (รหัสผ้าซ้ำ)",
+//             });
+//         }
 
-        res.status(500).json({
-            success: false,
-            message: "Failed to insert data",
-            error: err.message,
-        });
-    }
-};
+//         res.status(500).json({
+//             success: false,
+//             message: "Failed to insert data",
+//             error: err.message,
+//         });
+//     }
+// };
 
-exports.updateLinenItem = async (req, res) => {
-    try {
-        const dataArray = req.body;
-        const userName = req.user?.name || "Unknown User";
+// exports.updateLinenItem = async (req, res) => {
+//     try {
+//         const dataArray = req.body;
+//         const userName = req.user?.name || "Unknown User";
 
-        if (!Array.isArray(dataArray) || dataArray.length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: "Data must be a non-empty array",
-            });
-        }
+//         if (!Array.isArray(dataArray) || dataArray.length === 0) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "Data must be a non-empty array",
+//             });
+//         }
 
-        const fields = [
-            "linen_name",
-            "code",
-            "unit",
-            "linen_type",
-            "default_order_quantity",
-            "default_issue_quantity",
-            "price",
-        ];
+//         const fields = [
+//             "linen_name",
+//             "code",
+//             "unit",
+//             "linen_type",
+//             "default_order_quantity",
+//             "default_issue_quantity",
+//             "price",
+//         ];
 
-        const cases = {};
-        fields.forEach((f) => (cases[f] = []));
+//         const cases = {};
+//         fields.forEach((f) => (cases[f] = []));
 
-        const ids = [];
-        const params = [];
+//         const ids = [];
+//         const params = [];
 
-        dataArray.forEach((item) => {
-            if (!item.id) {
-                throw new Error("id is required for update");
-            }
+//         dataArray.forEach((item) => {
+//             if (!item.id) {
+//                 throw new Error("id is required for update");
+//             }
 
-            ids.push(item.id);
+//             ids.push(item.id);
 
-            fields.forEach((f) => {
-                cases[f].push("WHEN ? THEN ?");
+//             fields.forEach((f) => {
+//                 cases[f].push("WHEN ? THEN ?");
 
-                let value = item[f];
+//                 let value = item[f];
 
-                // 2. ปรับเงื่อนไขการ Cast ตัวเลขให้ตรงกับชื่อ field ใหม่
-                if (f === "default_order_quantity" || f === "default_issue_quantity" || f === "price") {
-                    value = Number(value) || 0;
-                }
+//                 // 2. ปรับเงื่อนไขการ Cast ตัวเลขให้ตรงกับชื่อ field ใหม่
+//                 if (f === "default_order_quantity" || f === "default_issue_quantity" || f === "price") {
+//                     value = Number(value) || 0;
+//                 }
 
-                params.push(item.id, value ?? null);
-            });
-        });
+//                 params.push(item.id, value ?? null);
+//             });
+//         });
 
-        // 3. SQL logic จะใช้ชื่อ field จาก array 'fields' อัตโนมัติ
-        const sql = `
-      UPDATE linen_items
-      SET
-        ${fields
-                .map((f) => `${f} = CASE id ${cases[f].join(" ")} END`)
-                .join(", ")},
-        updated_by = ?,
-        updated_at = NOW()
-      WHERE id IN (${ids.map(() => "?").join(",")})
-        AND deleted_at IS NULL
-    `;
+//         // 3. SQL logic จะใช้ชื่อ field จาก array 'fields' อัตโนมัติ
+//         const sql = `
+//       UPDATE linen_items
+//       SET
+//         ${fields
+//                 .map((f) => `${f} = CASE id ${cases[f].join(" ")} END`)
+//                 .join(", ")},
+//         updated_by = ?,
+//         updated_at = NOW()
+//       WHERE id IN (${ids.map(() => "?").join(",")})
+//         AND deleted_at IS NULL
+//     `;
 
-        params.push(userName, ...ids);
+//         params.push(userName, ...ids);
 
-        const [result] = await db.query(sql, params);
+//         const [result] = await db.query(sql, params);
 
-        res.json({
-            success: true,
-            message: `✅ Updated ${result.affectedRows} record(s) successfully`,
-        });
+//         res.json({
+//             success: true,
+//             message: `✅ Updated ${result.affectedRows} record(s) successfully`,
+//         });
 
-    } catch (err) {
-        console.error("❌ Error updating linen items:", err);
+//     } catch (err) {
+//         console.error("❌ Error updating linen items:", err);
 
-        if (err.code === "ER_DUP_ENTRY") {
-            return res.status(409).json({
-                success: false,
-                message: "รหัสผ้าซ้ำ",
-            });
-        }
+//         if (err.code === "ER_DUP_ENTRY") {
+//             return res.status(409).json({
+//                 success: false,
+//                 message: "รหัสผ้าซ้ำ",
+//             });
+//         }
 
-        res.status(500).json({
-            success: false,
-            message: "Failed to update linen items",
-            error: err.message,
-        });
-    }
-};
+//         res.status(500).json({
+//             success: false,
+//             message: "Failed to update linen items",
+//             error: err.message,
+//         });
+//     }
+// };
 
 exports.getLinenItem = async (req, res) => {
     try {
@@ -221,48 +221,48 @@ exports.getLinenItem = async (req, res) => {
     }
 };
 
-exports.deleteLinenItem = async (req, res) => {
-    try {
-        const { id } = req.params;
+// exports.deleteLinenItem = async (req, res) => {
+//     try {
+//         const { id } = req.params;
 
-        if (!id) {
-            return res.status(400).json({
-                success: false,
-                message: "ID is required",
-            });
-        }
+//         if (!id) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "ID is required",
+//             });
+//         }
 
-        const sql = `
-      UPDATE linen_items
-      SET deleted_at = NOW()
-      WHERE id = ?
-        AND deleted_at IS NULL
-    `;
+//         const sql = `
+//       UPDATE linen_items
+//       SET deleted_at = NOW()
+//       WHERE id = ?
+//         AND deleted_at IS NULL
+//     `;
 
-        const [result] = await db.query(sql, [id]);
+//         const [result] = await db.query(sql, [id]);
 
-        if (result.affectedRows === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "Linen item not found or already deleted",
-            });
-        }
+//         if (result.affectedRows === 0) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: "Linen item not found or already deleted",
+//             });
+//         }
 
-        return res.json({
-            success: true,
-            message: "Linen item soft deleted successfully",
-            affectedRows: result.affectedRows,
-        });
+//         return res.json({
+//             success: true,
+//             message: "Linen item soft deleted successfully",
+//             affectedRows: result.affectedRows,
+//         });
 
-    } catch (err) {
-        console.error("❌ Error soft deleting linen item:", err);
-        return res.status(500).json({
-            success: false,
-            message: "Database error",
-            error: err.message,
-        });
-    }
-};
+//     } catch (err) {
+//         console.error("❌ Error soft deleting linen item:", err);
+//         return res.status(500).json({
+//             success: false,
+//             message: "Database error",
+//             error: err.message,
+//         });
+//     }
+// };
 
 exports.searchLinenItems = async (req, res) => {
     try {

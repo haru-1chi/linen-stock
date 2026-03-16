@@ -4,10 +4,10 @@ const linenController = require('../controllers/linenController');
 const transactionController = require('../controllers/transactionController');
 const { authAndRole } = require("../middleware/auth")
 
-router.post('/linen-item', authAndRole(), linenController.createLinenItem);
-router.put('/linen-item', linenController.updateLinenItem);
+// router.post('/linen-item', authAndRole(), linenController.createLinenItem);
+// router.put('/linen-item', linenController.updateLinenItem);
 router.get('/linen-item', linenController.getLinenItem);
-router.delete('/linen-item/:id', authAndRole(), linenController.deleteLinenItem);
+// router.delete('/linen-item/:id', authAndRole(), linenController.deleteLinenItem);
 router.get('/linen-item/search', linenController.searchLinenItems);
 
 router.post('/linen-stock', authAndRole(), linenController.createStock);

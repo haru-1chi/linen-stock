@@ -326,53 +326,67 @@ exports.createStock = async (req, res) => {
     const connection = await db.getConnection();
     await connection.beginTransaction();
 
-    let lastLinenId = null; // 👈 เก็บไว้ตรงนี้
-
     try {
         const dataArray = req.body;
         const userName = req.user?.name || "Unknown User";
 
-        for (const item of dataArray) {
-            let linenId = item.linen_id;
+        if (!Array.isArray(dataArray) || dataArray.length === 0) {
+             return res.status(400).json({ success: false, message: "Data is empty" });
+        }
 
-            if (!linenId) {
-                const [linenResult] = await connection.query(
-                    `
-                    INSERT INTO linen_items 
-                    (code, linen_name, unit, linen_type, default_order_quantity, default_issue_quantity, price, created_by, updated_by)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    `,
-                    [
-                        item.code,
-                        item.linen_name,
-                        item.unit,
-                        item.linen_type,
-                        item.default_order_quantity || 0,
-                        item.default_issue_quantity || 0,
-                        item.price || 0,
-                        userName,
-                        userName,
-                    ]
-                );
+        // 1. Separate items with and without linen_id
+        const itemsWithId = dataArray.filter(item => item.linen_id);
+        const itemsWithoutId = dataArray.filter(item => !item.linen_id);
 
-                linenId = linenResult.insertId;
-            }
+        let finalLinenIds = []; // 👈 เก็บ linen_ids สำหรับข้อมูลตาราง stock
 
-            lastLinenId = linenId; // 👈 เซฟไว้
+        // 2. Insert LinenItems in Bulk for those without linen_id
+        if (itemsWithoutId.length > 0) {
+            const newLinenValues = itemsWithoutId.map(item => [
+                item.code,
+                item.linen_name,
+                item.unit,
+                item.linen_type,
+                item.default_order_quantity || 0,
+                item.default_issue_quantity || 0,
+                item.price || 0,
+                userName,
+                userName
+            ]);
+
+            const [insertLinenResult] = await connection.query(
+                `INSERT INTO linen_items 
+                 (code, linen_name, unit, linen_type, default_order_quantity, default_issue_quantity, price, created_by, updated_by)
+                 VALUES ?`,
+                 [newLinenValues]
+            );
+
+            let firstId = insertLinenResult.insertId;
+            // Map the newly inserted IDs back to the current stock insertion payload
+            itemsWithoutId.forEach((item, index) => {
+                 finalLinenIds.push({ ...item, linen_id: firstId + index });
+            });
+        }
+
+        // 3. Collect items that already have linen_id
+        itemsWithId.forEach(item => {
+             finalLinenIds.push(item);
+        });
+
+        // 4. Bulk Insert to Stock
+        if (finalLinenIds.length > 0) {
+            const stockValues = finalLinenIds.map(item => [
+                item.linen_id,
+                'new',
+                Number(item.remain) || 0,
+                item.note ?? null,
+                userName,
+                userName
+            ]);
 
             await connection.query(
-                `
-                INSERT INTO stock
-                (linen_id, stock_type, remain, note, created_by, updated_by)
-                VALUES (?, 'new', ?, ?, ?, ?)
-                `,
-                [
-                    linenId,
-                    Number(item.remain) || 0,
-                    item.note ?? null,
-                    userName,
-                    userName,
-                ]
+                `INSERT INTO stock (linen_id, stock_type, remain, note, created_by, updated_by) VALUES ?`,
+                [stockValues]
             );
         }
 
@@ -387,13 +401,11 @@ exports.createStock = async (req, res) => {
         await connection.rollback();
 
         if (err.code === "ER_DUP_ENTRY") {
-
+            // Find which one caused it to return detailed error
             const dataArray = req.body;
             const item = dataArray?.[0];
-
             let linenName = item?.linen_name;
 
-            // หา linen_name จาก code ถ้ามี
             if (item?.code) {
                 const [linen] = await connection.query(
                     `SELECT linen_name FROM linen_items WHERE code = ? OR linen_name = ? LIMIT 1`,

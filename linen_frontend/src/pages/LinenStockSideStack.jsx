@@ -260,8 +260,8 @@ function LinenStockSideStack({ onSelect, selectedId, refreshKey }) {
 
   const filteredStock = stock.filter(
     (item) =>
-      item.linen_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.code.toLowerCase().includes(searchTerm.toLowerCase()),
+      item?.linen_name?.toLowerCase()?.includes(searchTerm?.toLowerCase()) ||
+      item?.code?.toLowerCase()?.includes(searchTerm?.toLowerCase()),
   );
 
   const sortedStock = useMemo(() => {
@@ -417,7 +417,8 @@ function LinenStockSideStack({ onSelect, selectedId, refreshKey }) {
       <Dialog
         header="แก้ไขข้อมูลผ้า"
         visible={editDialogVisible}
-        style={{ width: "450px" }}
+        style={{ width: "600px" }}
+             maximizable
         modal
         onHide={() => setEditDialogVisible(false)}
         footer={

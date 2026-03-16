@@ -387,14 +387,27 @@ exports.createStock = async (req, res) => {
         await connection.rollback();
 
         if (err.code === "ER_DUP_ENTRY") {
-            const [linen] = await connection.query(
-                `SELECT linen_name FROM linen_items WHERE id = ?`,
-                [lastLinenId]
-            );
+
+            const dataArray = req.body;
+            const item = dataArray?.[0];
+
+            let linenName = item?.linen_name;
+
+            // หา linen_name จาก code ถ้ามี
+            if (item?.code) {
+                const [linen] = await connection.query(
+                    `SELECT linen_name FROM linen_items WHERE code = ? OR linen_name = ? LIMIT 1`,
+                    [item.code, item.linen_name]
+                );
+
+                if (linen.length > 0) {
+                    linenName = linen[0].linen_name;
+                }
+            }
 
             return res.status(400).json({
                 success: false,
-                message: `สต๊อค "${linen[0]?.linen_name}" มีอยู่แล้ว`,
+                message: `สต๊อค "${linenName}" มีอยู่แล้ว`,
             });
         }
 
@@ -403,7 +416,6 @@ exports.createStock = async (req, res) => {
             success: false,
             message: "เกิดข้อผิดพลาดในระบบ",
         });
-
     } finally {
         connection.release();
     }

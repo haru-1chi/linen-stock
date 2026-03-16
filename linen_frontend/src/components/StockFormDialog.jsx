@@ -23,7 +23,7 @@ export default function StockFormDialog({
     <Dialog
       header="เพิ่ม Stock ผ้าใหม่เท่านั้น"
       visible={dialogVisible}
-      style={{ width: "75vw" }}
+      style={{ width: "90vw" }}
       maximizable
       modal
       onHide={() => setDialogVisible(false)}
@@ -72,7 +72,7 @@ export default function StockFormDialog({
 
         <Column
           header="ชื่อรายการผ้า"
-          className="w-75"
+       
           body={(row, opt) => (
             <LinenAutoComplete
               row={row}
@@ -85,6 +85,7 @@ export default function StockFormDialog({
         <Column
           field="remain"
           header="จำนวนคงเหลือ"
+          style={{ width: "120px" }}
           body={(row, opt) => (
             <InputText
               value={row.remain}
@@ -130,7 +131,7 @@ export default function StockFormDialog({
         <Column
           field="default_order_quantity"
           header="จำนวนสั่งเริ่มต้น"
-          style={{ width: "140px" }}
+          style={{ width: "120px" }}
           body={(row, opt) => (
             <InputText
               value={row.default_order_quantity}
@@ -149,7 +150,7 @@ export default function StockFormDialog({
         <Column
           field="default_issue_quantity"
           header="จำนวนจ่ายเริ่มต้น"
-          style={{ width: "140px" }}
+          style={{ width: "120px" }}
           body={(row, opt) => (
             <InputText
               value={row.default_issue_quantity}
@@ -168,6 +169,7 @@ export default function StockFormDialog({
         <Column
           field="note"
           header="หมายเหตุ"
+                  style={{ width: "180px" }}
           body={(row, opt) => (
             <InputText
               value={row.note}

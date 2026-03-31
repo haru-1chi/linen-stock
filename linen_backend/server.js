@@ -1,4 +1,4 @@
-const { PORT, URI } = require("./config/index");
+const { PORT } = require("./config/index");
 const { createServer } = require("node:http");
 const pool = require("./mysql");
 const app = require("./app");

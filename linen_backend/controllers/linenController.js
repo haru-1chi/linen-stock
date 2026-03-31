@@ -510,6 +510,20 @@ exports.updateStock = async (req, res) => {
             });
         }
 
+        // 1.1️⃣ duplicate linen_name check
+        const [dupName] = await connection.query(
+            `SELECT id FROM linen_items WHERE linen_name = ? AND id != ? AND deleted_at IS NULL LIMIT 1`,
+            [linen_name, linen_id]
+        );
+
+        if (dupName.length > 0) {
+            await connection.rollback();
+            return res.status(400).json({
+                success: false,
+                message: `ชื่อผ้า "${linen_name}" มีอยู่แล้ว`,
+            });
+        }
+
         const updatedBy = req.user?.name || "Unknown User";
 
         // 2️⃣ update linen_items

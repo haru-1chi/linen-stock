@@ -18,7 +18,27 @@ export default function StockFormDialog({
   addRow,
   removeRow,
   dialogFooterTemplate,
+  formErrors = [], // Add this prop
 }) {
+  const getFieldProps = (rowIndex, field) => {
+    const error = formErrors.find(
+      (e) => e.rowIndex === rowIndex && e.field === field
+    );
+    const id = `row-${rowIndex}-${field}`;
+    let className = "w-full";
+    let invalid = false;
+
+    if (error) {
+      if (error.type === "required") {
+        invalid = true;
+      } else if (error.type === "duplicate") {
+        className += " p-invalid-duplicate";
+      }
+    }
+
+    return { id, className, invalid };
+  };
+
   return (
     <Dialog
       header="เพิ่ม Stock ผ้าใหม่เท่านั้น"
@@ -31,6 +51,7 @@ export default function StockFormDialog({
       contentStyle={{ minHeight: "500px" }}
     >
       <DataTable
+        key={formErrors.length > 0 ? `errors-${formErrors.length}-${JSON.stringify(formErrors)}` : "no-errors"}
         value={rows}
         showGridlines
         tableStyle={{ minWidth: "60rem" }}
@@ -38,7 +59,11 @@ export default function StockFormDialog({
       >
         <Column
           field="code"
-          header="รหัส ED"
+          header={
+            <span>
+              รหัส ED <span style={{ color: 'red' }}>*</span>
+            </span>
+          }
           style={{ width: "120px" }}
           body={(row, opt) => (
             <InputText
@@ -46,7 +71,7 @@ export default function StockFormDialog({
               onChange={(e) =>
                 handleInputChange(opt.rowIndex, "code", e.target.value)
               }
-              className="w-full"
+              {...getFieldProps(opt.rowIndex, "code")}
             />
           )}
         />
@@ -62,7 +87,7 @@ export default function StockFormDialog({
               optionLabel="label"
               optionValue="value"
               placeholder="เลือกประเภท"
-              className="w-full"
+              {...getFieldProps(opt.rowIndex, "linen_type")}
               onChange={(e) =>
                 handleInputChange(opt.rowIndex, "linen_type", e.value)
               }
@@ -71,21 +96,29 @@ export default function StockFormDialog({
         />
 
         <Column
-          header="ชื่อรายการผ้า"
-       
+          header={
+            <span>
+              ชื่อรายการผ้า <span style={{ color: 'red' }}>*</span>
+            </span>
+          }
           body={(row, opt) => (
             <LinenAutoComplete
               row={row}
               rowIndex={opt.rowIndex}
               handleInputChange={handleInputChange}
+              {...getFieldProps(opt.rowIndex, "linen_name")}
             />
           )}
         />
 
         <Column
           field="remain"
-          header="จำนวนคงเหลือ"
-          style={{ width: "120px" }}
+          header={
+            <span>
+              จำนวนคงเหลือ <span style={{ color: 'red' }}>*</span>
+            </span>
+          }
+          style={{ width: "130px" }}
           body={(row, opt) => (
             <InputText
               value={row.remain}
@@ -93,14 +126,14 @@ export default function StockFormDialog({
               onChange={(e) =>
                 handleInputChange(opt.rowIndex, "remain", e.target.value)
               }
-              className="w-full"
+              {...getFieldProps(opt.rowIndex, "remain")}
             />
           )}
         />
         <Column
           field="unit"
           header="หน่วย"
-          style={{ width: "120px" }}
+          style={{ width: "90px" }}
           body={(row, opt) => (
             <InputText
               value={row.unit}
@@ -169,7 +202,7 @@ export default function StockFormDialog({
         <Column
           field="note"
           header="หมายเหตุ"
-                  style={{ width: "180px" }}
+          style={{ width: "180px" }}
           body={(row, opt) => (
             <InputText
               value={row.note}

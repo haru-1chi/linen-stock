@@ -58,7 +58,7 @@ const formatDateLocal = (date) => {
   return `${y}-${m}-${d}`;
 };
 
-function ManageStock({ externalFilterId, onSuccess }) {
+function ManageStock({ externalFilterId, onSuccess, refreshKey }) {
   const toast = useRef(null);
   const [detailSuggestions, setDetailSuggestions] = useState([]);
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -193,7 +193,7 @@ function ManageStock({ externalFilterId, onSuccess }) {
     };
 
     fetchLinenItems();
-  }, [onSuccess]);
+  }, [onSuccess, refreshKey, showToast]);
 
   const searchDetail = (event) => {
     const query = event.query.toLowerCase();

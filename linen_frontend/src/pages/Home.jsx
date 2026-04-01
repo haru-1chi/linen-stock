@@ -80,8 +80,8 @@ function Home() {
     <div className="h-screen w-full flex flex-col bg-slate-100 overflow-hidden relative">
 
       {/* Background Decor - นุ่มนวลขึ้น ไม่แย่งสายตา */}
-      <div className="absolute top-[-5%] right-[-5%] w-[600px] h-[600px] bg-blue-200/30 rounded-full blur-[120px] z-0"></div>
-      <div className="absolute bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-indigo-200/20 rounded-full blur-[120px] z-0"></div>
+      <div className="absolute top-[-5%] right-[-5%] w-150 h-150 bg-blue-200/30 rounded-full blur-[120px] z-0"></div>
+      <div className="absolute bottom-[-10%] left-[-5%] w-150 h-150 bg-indigo-200/20 rounded-full blur-[120px] z-0"></div>
 
       {/* --- Nav --- */}
       <nav className="z-20 py-4 px-10 flex justify-between items-center shrink-0 bg-white/40 backdrop-blur-md border-b border-slate-200">
@@ -95,7 +95,7 @@ function Home() {
 
       {/* --- Main Content --- */}
       <main className="flex-1 flex items-center justify-center p-6 z-10 overflow-hidden">
-        <div className="w-full max-w-6xl aspect-[16/9] max-h-[660px] bg-white border border-white shadow-[0_40px_80px_-15px_rgba(15,23,42,0.08)] rounded-[3rem] flex overflow-hidden">
+        <div className="w-full max-w-6xl aspect-video max-h-165 bg-white border border-white shadow-[0_40px_80px_-15px_rgba(15,23,42,0.08)] rounded-[3rem] flex overflow-hidden">
 
           {/* Left: Summary Panel */}
           <div className="w-[58%] p-12 flex flex-col bg-linear-to-b from-slate-50/50 to-white border-r border-slate-100">

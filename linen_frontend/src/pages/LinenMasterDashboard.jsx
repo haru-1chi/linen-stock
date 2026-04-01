@@ -22,6 +22,7 @@ function LinenMasterDashboard() {
           onSelect={handleSelectLinen}
           selectedId={selectedLinen?.id}
           refreshKey={refreshKey}
+          onSuccess={triggerRefresh}
         />
       </div>
 
@@ -31,6 +32,7 @@ function LinenMasterDashboard() {
           <ManageStock
             externalFilterId={selectedLinen?.linen_id}
             onSuccess={triggerRefresh}
+            refreshKey={refreshKey}
           />
         </div>
       </div>

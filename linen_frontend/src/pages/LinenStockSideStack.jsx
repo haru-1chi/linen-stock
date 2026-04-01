@@ -33,7 +33,7 @@ import {
 const API_BASE =
   import.meta.env.VITE_REACT_APP_API || "http://localhost:3000/api";
 
-function LinenStockSideStack({ onSelect, selectedId, refreshKey }) {
+function LinenStockSideStack({ onSelect, selectedId, refreshKey, onSuccess }) {
   const toast = useRef(null);
   const token = localStorage.getItem("token");
 
@@ -208,12 +208,75 @@ function LinenStockSideStack({ onSelect, selectedId, refreshKey }) {
       prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)),
     );
   };
+  const [formErrors, setFormErrors] = useState([]); // [{ rowIndex, field, type: 'required' | 'duplicate' }]
 
   const submitRows = async () => {
     try {
-      if (rows.some((r) => (!r.linen_id && !r.linen_name) || r.remain === "")) {
-        return showToast("error", "ผิดพลาด", "กรุณากรอกข้อมูลให้ครบ");
+      let errors = [];
+      const seenCodes = new Map();
+      const seenNames = new Map();
+
+      rows.forEach((r, idx) => {
+        // 1. Check Required
+        if (!r.code?.toString()?.trim())
+          errors.push({ rowIndex: idx, field: "code", type: "required" });
+        if (!r.linen_name?.toString()?.trim())
+          errors.push({ rowIndex: idx, field: "linen_name", type: "required" });
+        if (r.remain === "" || r.remain === null || r.remain === undefined)
+          errors.push({ rowIndex: idx, field: "remain", type: "required" });
+
+        // 2. Local Duplicate Check (within this batch)
+        const codeTrim = r.code?.toString()?.trim();
+        if (codeTrim) {
+          if (seenCodes.has(codeTrim)) {
+            errors.push({ rowIndex: idx, field: "code", type: "duplicate" });
+            const prevIdx = seenCodes.get(codeTrim);
+            if (!errors.some((e) => e.rowIndex === prevIdx && e.field === "code")) {
+              errors.push({ rowIndex: prevIdx, field: "code", type: "duplicate" });
+            }
+          } else {
+            seenCodes.set(codeTrim, idx);
+          }
+        }
+
+        const nameTrim = r.linen_name?.toString()?.trim();
+        if (nameTrim) {
+          if (seenNames.has(nameTrim)) {
+            errors.push({ rowIndex: idx, field: "linen_name", type: "duplicate" });
+            const prevIdx = seenNames.get(nameTrim);
+            if (!errors.some((e) => e.rowIndex === prevIdx && e.field === "linen_name")) {
+              errors.push({ rowIndex: prevIdx, field: "linen_name", type: "duplicate" });
+            }
+          } else {
+            seenNames.set(nameTrim, idx);
+          }
+        }
+      });
+
+      if (errors.length > 0) {
+        setFormErrors(errors);
+        const hasRequired = errors.some((e) => e.type === "required");
+        const hasDuplicate = errors.some((e) => e.type === "duplicate");
+
+        let msg = "กรุณาตรวจสอบข้อมูล";
+        if (hasRequired && hasDuplicate) msg = "กรุณากรอกข้อมูลให้ครบและตรวจสอบข้อมูลซ้ำ (ขอบสีแดง/ม่วง)";
+        else if (hasRequired) msg = "กรุณากรอกข้อมูลให้ครบ (ช่องสีแดง)";
+        else if (hasDuplicate) msg = "มีข้อมูลซ้ำในรายการ (ช่องสีม่วง)";
+
+        const firstError = errors[0];
+        const fieldId = `row-${firstError.rowIndex}-${firstError.field}`;
+        setTimeout(() => {
+          const el = document.getElementById(fieldId);
+          if (el) {
+            el.focus();
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }, 100);
+        return showToast("error", "ผิดพลาด", msg);
       }
+
+      setFormErrors([]); // Success, clear errors
+
       const payload = rows.map((r) => ({
         ...r,
         stock_type: "new",
@@ -224,6 +287,7 @@ function LinenStockSideStack({ onSelect, selectedId, refreshKey }) {
       });
       showToast("success", "สำเร็จ", "เพิ่มข้อมูลเรียบร้อยแล้ว");
       fetchStock();
+      if (onSuccess) onSuccess(); // Notify parent to refresh siblings
       setRows([initialRow]);
       setDialogVisible(false);
     } catch (err) {
@@ -553,6 +617,7 @@ function LinenStockSideStack({ onSelect, selectedId, refreshKey }) {
         dialogVisible={dialogVisible}
         setDialogVisible={() => setDialogVisible(false)}
         rows={rows}
+        formErrors={formErrors}
         linenTypeOptions={linenTypeOptions}
         dropdownOptions={linenItemsActive}
         handleInputChange={handleInputChange}

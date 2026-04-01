@@ -99,9 +99,10 @@ const ManageStockDialog = ({
             disabled
           />
         </div>
-        
+
         <div className="flex flex-col col-span-3">
-          <label htmlFor="detail">รายละเอียด</label>
+          <label htmlFor="detail">{statusType === "IN" ? "บริษัท" : "หน่วยงาน"}</label>
+          {/* <label htmlFor="detail">รายละเอียด</label> */}
           <AutoComplete
             id="detail"
             value={formData.partner_name}
@@ -144,7 +145,7 @@ const ManageStockDialog = ({
             <small className="p-error">กรุณาระบุราคาที่มากกว่า 0</small>
           )}
         </div>
-        
+
         <div className="flex flex-col">
           <label htmlFor="amount">
             {statusType === "IN" ? "รับจำนวน" : "จ่ายจำนวน"}
@@ -179,7 +180,7 @@ const ManageStockDialog = ({
             <small className="p-error">กรุณาระบุชื่อผู้รับ</small>
           )}
         </div>
-        
+
         <div className="flex flex-col">
           <label htmlFor="payer">ผู้จ่าย</label>
           <InputText

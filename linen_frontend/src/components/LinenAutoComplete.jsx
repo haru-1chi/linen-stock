@@ -4,7 +4,7 @@ import { AutoComplete } from "primereact/autocomplete";
 const API_BASE =
   import.meta.env.VITE_REACT_APP_API || "http://localhost:3000/api";
 
-export const LinenAutoComplete = ({ row, rowIndex, handleInputChange }) => {
+export const LinenAutoComplete = ({ row, rowIndex, handleInputChange, id, className, invalid }) => {
   const [suggestions, setSuggestions] = useState([]);
 
   const searchLinen = async (event) => {
@@ -32,7 +32,10 @@ export const LinenAutoComplete = ({ row, rowIndex, handleInputChange }) => {
       completeMethod={searchLinen}
       field="linen_name"
       dropdown
-      className="w-full"
+      inputId={id}
+      className={`w-full ${className}`}
+      inputClassName={className}
+      invalid={invalid}
       onChange={(e) => {
         const value = e.value;
         if (typeof value === "string") {

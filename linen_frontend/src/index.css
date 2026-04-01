@@ -67,3 +67,16 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 } */
+
+/* Custom Duplicate Validation Styles */
+.p-inputtext.p-invalid-duplicate,
+.p-dropdown.p-invalid-duplicate {
+  border-color: #a855f7 !important; /* Indigo/Purple 500 equivalent */
+  border-width: 2px !important;
+}
+
+.p-inputtext.p-invalid-duplicate:focus,
+.p-dropdown.p-invalid-duplicate.p-focus {
+  box-shadow: 0 0 0 0.2rem rgba(168, 85, 247, 0.25) !important;
+  border-color: #a855f7 !important;
+}

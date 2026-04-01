@@ -18,6 +18,8 @@ router.delete('/linen-stock/:id', authAndRole(), linenController.deleteStock);
 router.post('/create', authAndRole(), transactionController.createLinenTransaction);
 router.get('/transactions', transactionController.getLinenTransactions);
 
+router.get('/dashboard-summary', transactionController.getDashboardSummary);
+
 //Lookup
 router.get('/department', linenController.getDepartment);
 router.get('/partner', linenController.getPartner);

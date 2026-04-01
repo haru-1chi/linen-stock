@@ -42,10 +42,10 @@ axiosInstance.interceptors.response.use(
 
       setTimeout(() => {
         logoutHandler();
-        navigateHandler("/login");
+        navigateHandler("/");
       }, 1000);
 
-      return new Promise(() => {});
+      return new Promise(() => { });
     }
 
     return Promise.reject(error);

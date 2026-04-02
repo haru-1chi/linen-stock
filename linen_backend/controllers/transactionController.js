@@ -341,44 +341,21 @@ exports.getLinenTransactions = async (req, res) => {
 
 exports.getDashboardSummary = async (req, res) => {
     try {
-        const now = new Date();
-        // หาวันแรกของเดือนปัจจุบัน (YYYY-MM-01)
-        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-        // หาวันสุดท้ายของวันนี้
-        const today = now.toISOString().split('T')[0];
-
-        // 1. คำนวณยอด รับเข้า (IN) และ จ่ายออก (OUT) ของเดือนนี้
-        const summarySql = `
+        const sql = `
             SELECT 
-                SUM(CASE WHEN status_type = 'IN' THEN amount ELSE 0 END) as total_in,
-                SUM(CASE WHEN status_type = 'OUT' THEN amount ELSE 0 END) as total_out
-            FROM linen_transactions
-            WHERE created_at >= ? AND created_at < DATE_ADD(?, INTERVAL 1 DAY)
+                SUM(s.remain * l.price) as total_valuation,
+                SUM(s.remain) as total_items
+            FROM stock s
+            JOIN linen_items l ON s.linen_id = l.id
+            WHERE s.deleted_at IS NULL AND l.deleted_at IS NULL
         `;
 
-        // 2. คำนวณยอดคงเหลือทั้งหมด (Total Balance) จากตาราง stock
-        const totalStockSql = `
-            SELECT SUM(remain) as total_balance 
-            FROM stock 
-            WHERE deleted_at IS NULL
-        `;
-
-        // รันพร้อมกันเพื่อความเร็ว
-        const [[summaryRows], [stockRows]] = await Promise.all([
-            db.query(summarySql, [firstDayOfMonth, today]),
-            db.query(totalStockSql)
-        ]);
-
-        const summary = summaryRows[0] || { total_in: 0, total_out: 0 };
-        const stock = stockRows[0] || { total_balance: 0 };
+        const [rows] = await db.query(sql);
 
         res.status(200).json({
             success: true,
-            data: {
-                receivedThisMonth: Number(summary.total_in || 0),
-                dispensedThisMonth: Number(summary.total_out || 0),
-                totalBalance: Number(stock.total_balance || 0)
-            }
+            totalValuation: Number(rows[0]?.total_valuation || 0),
+            totalItems: Number(rows[0]?.total_items || 0) // เพิ่มบรรทัดนี้
         });
 
     } catch (err) {

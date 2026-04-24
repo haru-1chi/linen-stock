@@ -35,7 +35,7 @@ exports.authAndRole = (...allowedRoles) => {
       //ใช้ mysql2/promise แบบถูกต้อง เพื่อป้องกัน SQL Injection
       const sql = `
         SELECT u.id, u.name, u.lastname
-        FROM tb_bp_person u
+        FROM tb_ap_index_view u
         WHERE u.id = ?
         LIMIT 1
       `;

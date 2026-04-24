@@ -16,7 +16,7 @@ exports.login = async (req, res) => {
     }
 
     const [results] = await hospitalDB.query(
-      "SELECT * FROM tb_ap_main WHERE id = ? LIMIT 1",
+      "SELECT * FROM tb_ap_index_view WHERE id = ? LIMIT 1",
       [username]
     );
 

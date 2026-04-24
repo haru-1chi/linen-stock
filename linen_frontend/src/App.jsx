@@ -11,17 +11,37 @@ import Layout from "./contexts/Layout";
 const Home = React.lazy(() => import("./pages/Home"));
 const Login = React.lazy(() => import("./pages/Login"));
 const Profile = React.lazy(() => import("./pages/Profile"));
-const LinenMasterDashboard = React.lazy(() => import("./pages/LinenMasterDashboard"));
+const LinenMasterDashboard = React.lazy(
+  () => import("./pages/LinenMasterDashboard"),
+);
+const LinenStockPage = React.lazy(() => import("./pages/LinenStockPage"));
 
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Suspense fallback={<div className="flex h-screen w-screen items-center justify-center bg-slate-50"><i className="pi pi-spin pi-spinner text-indigo-500" style={{ fontSize: '3rem' }}></i></div>}>
+        <Suspense
+          fallback={
+            <div className="flex h-screen w-screen items-center justify-center bg-slate-50">
+              <i
+                className="pi pi-spin pi-spinner text-indigo-500"
+                style={{ fontSize: "3rem" }}
+              ></i>
+            </div>
+          }
+        >
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route element={<Layout />}>
+              <Route
+                path="/linen/stock"
+                element={
+                  <ProtectedRoute>
+                    <LinenStockPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/linen/dashboard"
                 element={

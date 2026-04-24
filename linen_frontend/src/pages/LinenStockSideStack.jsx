@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
+import { Link } from "react-router-dom";
 import { Toast } from "primereact/toast";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
@@ -28,6 +29,7 @@ import {
   faEdit,
   faArrowUpWideShort,
   faArrowDownWideShort,
+  faTable
 } from "@fortawesome/free-solid-svg-icons";
 
 const API_BASE =
@@ -345,10 +347,21 @@ function LinenStockSideStack({ onSelect, selectedId, refreshKey, onSuccess }) {
 
       {/* Header ค้นหา: ปรับให้ดู Clean */}
       <div className="p-5 bg-white border-b border-slate-200">
-        <h2 className="text-xl font-bold mb-4 text-slate-800 flex items-center gap-2">
-          <div className="w-2 h-6 bg-indigo-500 rounded-full"></div>
-          สต๊อคผ้าคงเหลือ
-        </h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold  text-slate-800 flex items-center gap-2">
+            <div className="w-2 h-6 bg-indigo-500 rounded-full"></div>
+            สต๊อคผ้าคงเหลือ
+          </h2>
+          <Link
+            to="/linen/stock"
+            className="flex items-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors text-sm font-medium"
+          >
+            <FontAwesomeIcon icon={faTable} className="text-lg"/>
+            ดูในรูปแบบตาราง
+          </Link>
+        </div>
+
+
         <div className="flex justify-between gap-2">
           {" "}
           {/* เพิ่ม flex gap เพื่อวางปุ่มคู่กัน */}
@@ -402,11 +415,10 @@ function LinenStockSideStack({ onSelect, selectedId, refreshKey, onSuccess }) {
             onClick={() => onSelect(item)}
             className={`
             group relative cursor-pointer transition-all duration-300 rounded-2xl
-            ${
-              selectedId === item.id
+            ${selectedId === item.id
                 ? "bg-white ring-2 ring-indigo-500 shadow-lg shadow-indigo-100 -translate-y-0.5"
                 : "bg-white border border-slate-200 hover:border-indigo-300 shadow-sm hover:shadow-md"
-            }
+              }
           `}
           >
             <div className="py-3 px-4">
@@ -482,7 +494,7 @@ function LinenStockSideStack({ onSelect, selectedId, refreshKey, onSuccess }) {
         header="แก้ไขข้อมูลผ้า"
         visible={editDialogVisible}
         style={{ width: "600px" }}
-             maximizable
+        maximizable
         modal
         onHide={() => setEditDialogVisible(false)}
         footer={

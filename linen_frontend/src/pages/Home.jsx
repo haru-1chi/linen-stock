@@ -77,10 +77,6 @@ function Home() {
   return (
     <div className="min-h-screen w-full flex flex-col bg-slate-100 relative overflow-x-hidden">
 
-      {/* Background Decor */}
-      <div className="absolute top-[-5%] right-[-5%] w-72 h-72 md:w-150 md:h-150 bg-blue-200/30 rounded-full blur-[80px] md:blur-[120px] z-0"></div>
-      <div className="absolute bottom-[-10%] left-[-5%] w-72 h-72 md:w-150 md:h-150 bg-indigo-200/20 rounded-full blur-[80px] md:blur-[120px] z-0"></div>
-
       {/* --- Nav --- */}
       <nav className="z-20 py-4 px-6 md:px-10 flex justify-between items-center shrink-0 bg-white/40 backdrop-blur-md border-b border-slate-200">
         <div className="flex items-center gap-3">

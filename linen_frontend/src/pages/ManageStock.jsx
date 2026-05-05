@@ -14,6 +14,7 @@ import { Column } from "primereact/column";
 import { ColumnGroup } from "primereact/columngroup";
 import { Row } from "primereact/row";
 import { Button } from "primereact/button";
+import { Paginator } from "primereact/paginator";
 import { Dialog } from "primereact/dialog";
 import { Calendar } from "primereact/calendar";
 import { InputText } from "primereact/inputtext";
@@ -36,6 +37,7 @@ import {
   faArrowTrendDown,
   faCircleInfo,
   faMinus,
+  faBars,
 } from "@fortawesome/free-solid-svg-icons";
 import { Toast } from "primereact/toast";
 import Swal from "sweetalert2";
@@ -58,7 +60,7 @@ const formatDateLocal = (date) => {
   return `${y}-${m}-${d}`;
 };
 
-function ManageStock({ externalFilterId, onSuccess, refreshKey }) {
+function ManageStock({ externalFilterId, onSuccess, refreshKey, onOpenMobileMenu }) {
   const toast = useRef(null);
   const [detailSuggestions, setDetailSuggestions] = useState([]);
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -518,23 +520,24 @@ function ManageStock({ externalFilterId, onSuccess, refreshKey }) {
   const header = useMemo(() => (
     <div className="flex flex-col gap-4">
       {/* แถวที่ 1: Filter & Summary */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <Dropdown
             value={filterLinenId}
             options={linenItemsActive}
             optionLabel="label"
             optionValue="value"
             placeholder="เลือกรายการผ้า"
-            className="w-100"
+            className="w-full sm:w-64"
             filter
             onChange={(e) => setFilterLinenId(e.value)}
           />
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center justify-between sm:justify-start gap-1">
             <Button
               icon={<FontAwesomeIcon icon={faChevronLeft} />}
               onClick={() => changeMonth(-1)}
+              className="p-button-outlined p-button-secondary"
             />
 
             <Calendar
@@ -544,17 +547,18 @@ function ManageStock({ externalFilterId, onSuccess, refreshKey }) {
               dateFormat="mm/yy"
               placeholder="เดือน/ปี"
               showIcon
-              className="w-40"
+              className="flex-1 sm:w-40"
             />
 
             <Button
               icon={<FontAwesomeIcon icon={faChevronRight} />}
               onClick={() => changeMonth(1)}
+              className="p-button-outlined p-button-secondary"
             />
           </div>
         </div>
-        <div className="flex items-center gap-6 px-4 py-2 bg-indigo-50 rounded-xl border border-indigo-100">
-          <div className="text-center">
+        <div className="flex flex-wrap items-center justify-between sm:justify-center gap-4 sm:gap-6 px-4 py-3 bg-indigo-50 rounded-xl border border-indigo-100">
+          <div className="text-center flex-1 sm:flex-none">
             <p className="text-xs text-slate-500 uppercase font-bold">
               รับเข้าเดือนนี้
             </p>
@@ -562,8 +566,8 @@ function ManageStock({ externalFilterId, onSuccess, refreshKey }) {
               +{monthlySummary.totalIn.toLocaleString()}
             </p>
           </div>
-          <div className="w-px h-8 bg-indigo-200"></div>
-          <div className="text-center">
+          <div className="w-px h-8 bg-indigo-200 hidden sm:block"></div>
+          <div className="text-center flex-1 sm:flex-none">
             <p className="text-xs text-slate-500 uppercase font-bold">
               จ่ายออกเดือนนี้
             </p>
@@ -571,8 +575,8 @@ function ManageStock({ externalFilterId, onSuccess, refreshKey }) {
               -{monthlySummary.totalOut.toLocaleString()}
             </p>
           </div>
-          <div className="w-px h-8 bg-indigo-200"></div>
-          <div className="text-center">
+          <div className="w-px h-8 bg-indigo-200 hidden sm:block"></div>
+          <div className="text-center flex-1 sm:flex-none w-full sm:w-auto mt-2 sm:mt-0 border-t border-indigo-200 pt-2 sm:border-none sm:pt-0">
             <p className="text-xs text-indigo-600 uppercase font-bold">
               คงเหลือสิ้นเดือน
             </p>
@@ -589,11 +593,24 @@ function ManageStock({ externalFilterId, onSuccess, refreshKey }) {
     <div className="h-full flex flex-col overflow-hidden bg-slate-50">
       <Toast ref={toast} />
       <div className="flex-1 p-4 sm:p-8 pt-6 overflow-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h5 className="text-2xl font-bold text-slate-800 mb-1">
-            ประวัติการรับ-จ่ายผ้า
-          </h5>
-          <div className="flex justify-between gap-3">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
+          <div className="flex items-center gap-3">
+            <div className="md:hidden">
+              {onOpenMobileMenu && (
+                <Button
+                  icon={<FontAwesomeIcon icon={faBars} />}
+                  className="p-button-rounded p-button-text p-button-secondary bg-slate-200 hover:bg-slate-300 w-10 h-10 flex-shrink-0"
+                  onClick={onOpenMobileMenu}
+                  aria-label="เมนู"
+                />
+              )}
+            </div>
+
+            <h5 className="text-2xl font-bold text-slate-800">
+              ประวัติการรับ-จ่ายผ้า
+            </h5>
+          </div>
+          <div className="flex flex-wrap justify-between md:justify-end gap-3">
             <Button
               type="button"
               label="Export Excel"
@@ -652,104 +669,176 @@ function ManageStock({ externalFilterId, onSuccess, refreshKey }) {
           </div>
         </div>
 
-        <div className="relative">
-          <DataTable
-            header={header}
-            value={transactions}
-            loading={loading}
-            dataKey="id"
-            tableStyle={{ minWidth: "50rem" }}
-            emptyMessage="ไม่พบข้อมูล"
-            lazy
-            paginator
-            rows={rows}
-            showGridlines
-            first={first}
-            footerColumnGroup={footerGroup}
-            totalRecords={totalRecords}
-            onPage={onPage}
-            rowsPerPageOptions={[9, 25, 50, 100]}
-            sortField={sortField}
-            sortOrder={sortOrder}
-            onSort={onSort}
-            rowClassName={() => "border-b border-slate-50"}
-          >
-            <Column
-              field="created_at"
-              header="วัน-เดือน-ปี"
-              body={(row) =>
-                new Intl.DateTimeFormat("th-TH", {
-                  timeZone: "Asia/Bangkok",
-                }).format(new Date(row.created_at))
-              }
-              sortable
-              style={{ width: "150px" }}
-            />
-            <Column
-              header="รายละเอียด"
-              body={(row) => `${row.partner_name || "-"}`}
-            />
-            <Column
-              field="price"
-              header="ราคา"
-              body={(row) =>
-                row.price
-                  ? row.price.toLocaleString("th-TH", {
+        <div className="relative mt-2">
+          {/* Desktop Table View */}
+          <div className="hidden md:block">
+            <DataTable
+              header={header}
+              value={transactions}
+              loading={loading}
+              dataKey="id"
+              tableStyle={{ minWidth: "50rem" }}
+              emptyMessage="ไม่พบข้อมูล"
+              lazy
+              paginator
+              rows={rows}
+              showGridlines
+              first={first}
+              footerColumnGroup={footerGroup}
+              totalRecords={totalRecords}
+              onPage={onPage}
+              rowsPerPageOptions={[9, 25, 50, 100]}
+              sortField={sortField}
+              sortOrder={sortOrder}
+              onSort={onSort}
+              rowClassName={() => "border-b border-slate-50"}
+            >
+              <Column
+                field="created_at"
+                header="วัน-เดือน-ปี"
+                body={(row) =>
+                  new Intl.DateTimeFormat("th-TH", {
+                    timeZone: "Asia/Bangkok",
+                  }).format(new Date(row.created_at))
+                }
+                sortable
+                style={{ width: "150px" }}
+              />
+              <Column
+                header="รายละเอียด"
+                body={(row) => `${row.partner_name || "-"}`}
+              />
+              <Column
+                field="price"
+                header="ราคา"
+                body={(row) =>
+                  row.price
+                    ? row.price.toLocaleString("th-TH", {
                       style: "currency",
                       currency: "THB",
                     })
-                  : "-"
-              }
-              style={{ width: "150px" }}
-            />
-            <Column
-              header="รับ"
-              body={(row) =>
-                row.status_type === "IN" ? (
-                  <span className="text-green-600 font-semibold">
-                    +{row.amount}
-                  </span>
-                ) : (
-                  "-"
-                )
-              }
-              style={{ width: "150px" }}
-            />
+                    : "-"
+                }
+                style={{ width: "150px" }}
+              />
+              <Column
+                header="รับ"
+                body={(row) =>
+                  row.status_type === "IN" ? (
+                    <span className="text-green-600 font-semibold">
+                      +{row.amount}
+                    </span>
+                  ) : (
+                    "-"
+                  )
+                }
+                style={{ width: "150px" }}
+              />
 
-            <Column
-              header="จ่าย"
-              body={(row) =>
-                row.status_type === "OUT" ? (
-                  <span className="text-red-500 font-semibold">
-                    -{row.amount}
-                  </span>
-                ) : (
-                  "-"
-                )
-              }
-              style={{ width: "150px" }}
-            />
+              <Column
+                header="จ่าย"
+                body={(row) =>
+                  row.status_type === "OUT" ? (
+                    <span className="text-red-500 font-semibold">
+                      -{row.amount}
+                    </span>
+                  ) : (
+                    "-"
+                  )
+                }
+                style={{ width: "150px" }}
+              />
 
-            <Column
-              field="balance_after"
-              header="คงเหลือ"
-              body={(row) => (
-                <span className="font-semibold">
-                  {row.balance_after?.toLocaleString("th-TH")}
-                </span>
+              <Column
+                field="balance_after"
+                header="คงเหลือ"
+                body={(row) => (
+                  <span className="font-semibold">
+                    {row.balance_after?.toLocaleString("th-TH")}
+                  </span>
+                )}
+                style={{ width: "150px" }}
+              />
+
+              <Column field="receiver" header="ผู้รับ" />
+
+              <Column field="payer" header="ผู้จ่าย" />
+            </DataTable>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden">
+            <div className="mb-4">
+              {header}
+            </div>
+            
+            <div className="flex flex-col gap-3">
+              {transactions.map((row) => (
+                <div key={row.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-3">
+                  <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                    <span className="text-sm text-slate-500 font-medium">
+                      <i className="pi pi-calendar mr-2 text-indigo-400"></i>
+                      {new Intl.DateTimeFormat("th-TH", { timeZone: "Asia/Bangkok", day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(row.created_at))}
+                    </span>
+                    <span className={`text-xs font-bold px-3 py-1 rounded-full ${row.status_type === 'IN' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-red-50 text-red-500 border border-red-100'}`}>
+                      {row.status_type === 'IN' ? 'รับเข้า' : 'จ่ายออก'}
+                    </span>
+                  </div>
+                  
+                  <div className="flex justify-between items-start mt-1">
+                    <div className="flex-1 pr-2">
+                      <p className="text-slate-800 font-bold text-base leading-tight">
+                        {row.partner_name || "-"}
+                      </p>
+                      <div className="mt-2 flex flex-col gap-1">
+                        <p className="text-xs text-slate-500">
+                          <span className="font-semibold">ผู้รับ:</span> {row.receiver || "-"}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          <span className="font-semibold">ผู้จ่าย:</span> {row.payer || "-"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-xl font-black tracking-tight ${row.status_type === 'IN' ? 'text-emerald-600' : 'text-red-500'}`}>
+                        {row.status_type === 'IN' ? '+' : '-'}{row.amount}
+                      </p>
+                      <div className="bg-indigo-50 px-2 py-1 rounded-lg inline-block mt-2">
+                        <p className="text-xs text-indigo-700 font-bold">
+                          คงเหลือ: {row.balance_after?.toLocaleString("th-TH")}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {transactions.length === 0 && !loading && (
+                <div className="text-center py-10 bg-white rounded-2xl border border-slate-200">
+                  <p className="text-slate-400 font-medium">ไม่พบข้อมูลประวัติ</p>
+                </div>
               )}
-              style={{ width: "150px" }}
-            />
+            </div>
 
-            <Column field="receiver" header="ผู้รับ" />
+            {/* Mobile Paginator */}
+            {totalRecords > 0 && (
+              <Paginator 
+                first={first} 
+                rows={rows} 
+                totalRecords={totalRecords} 
+                onPageChange={onPage} 
+                className="mt-4 bg-transparent border-none p-0"
+                template="FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
+                currentPageReportTemplate="{first} - {last} จาก {totalRecords}"
+              />
+            )}
+          </div>
 
-            <Column field="payer" header="ผู้จ่าย" />
-          </DataTable>
           {loading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-10 transition-opacity">
+            <div className="absolute inset-0 flex items-center justify-center bg-white/60 z-10 transition-opacity backdrop-blur-[1px] rounded-2xl">
               <i
-                className="pi pi-spin pi-spinner"
-                style={{ fontSize: "2rem" }}
+                className="pi pi-spin pi-spinner text-indigo-600"
+                style={{ fontSize: "2.5rem" }}
               ></i>
             </div>
           )}

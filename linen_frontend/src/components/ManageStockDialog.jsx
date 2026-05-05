@@ -53,9 +53,9 @@ const ManageStockDialog = ({
       footer={renderFooter()}
       onHide={hideDialog}
     >
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-2">
-        <div className="flex flex-col col-span-4">
-          <label htmlFor="item">รายการ</label>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+        <div className="flex flex-col col-span-2 md:col-span-4">
+          <label htmlFor="item" className="font-semibold text-slate-700 mb-1">รายการ</label>
           <Dropdown
             id="item"
             value={formData.linen_id}
@@ -86,8 +86,8 @@ const ManageStockDialog = ({
           )}
         </div>
 
-        <div className="flex flex-col col-span-1">
-          <label htmlFor="date">วันที่</label>
+        <div className="flex flex-col col-span-2 md:col-span-1">
+          <label htmlFor="date" className="font-semibold text-slate-700 mb-1">วันที่</label>
           <Calendar
             id="date"
             showIcon
@@ -100,8 +100,8 @@ const ManageStockDialog = ({
           />
         </div>
 
-        <div className="flex flex-col col-span-3">
-          <label htmlFor="detail">{statusType === "IN" ? "บริษัท" : "หน่วยงาน"}</label>
+        <div className="flex flex-col col-span-2 md:col-span-3">
+          <label htmlFor="detail" className="font-semibold text-slate-700 mb-1">{statusType === "IN" ? "บริษัท" : "หน่วยงาน"}</label>
           {/* <label htmlFor="detail">รายละเอียด</label> */}
           <AutoComplete
             id="detail"
@@ -127,8 +127,8 @@ const ManageStockDialog = ({
           )}
         </div>
 
-        <div className="flex flex-col">
-          <label htmlFor="price">ราคา (บาท)</label>
+        <div className="flex flex-col col-span-1 md:col-span-1">
+          <label htmlFor="price" className="font-semibold text-slate-700 mb-1">ราคา (บาท)</label>
           <InputNumber
             id="price"
             mode="currency"
@@ -146,8 +146,8 @@ const ManageStockDialog = ({
           )}
         </div>
 
-        <div className="flex flex-col">
-          <label htmlFor="amount">
+        <div className="flex flex-col col-span-1 md:col-span-1">
+          <label htmlFor="amount" className="font-semibold text-slate-700 mb-1">
             {statusType === "IN" ? "รับจำนวน" : "จ่ายจำนวน"}
           </label>
           <InputNumber
@@ -166,8 +166,8 @@ const ManageStockDialog = ({
           )}
         </div>
 
-        <div className="flex flex-col">
-          <label htmlFor="receiver">ผู้รับ</label>
+        <div className="flex flex-col col-span-1 md:col-span-1">
+          <label htmlFor="receiver" className="font-semibold text-slate-700 mb-1">ผู้รับ</label>
           <InputText
             id="receiver"
             className={`w-full ${submitted && !formData.receiver ? "p-invalid" : ""}`}
@@ -181,8 +181,8 @@ const ManageStockDialog = ({
           )}
         </div>
 
-        <div className="flex flex-col">
-          <label htmlFor="payer">ผู้จ่าย</label>
+        <div className="flex flex-col col-span-1 md:col-span-1">
+          <label htmlFor="payer" className="font-semibold text-slate-700 mb-1">ผู้จ่าย</label>
           <InputText
             id="payer"
             className={`w-full ${submitted && !formData.payer ? "p-invalid" : ""}`}

@@ -54,7 +54,7 @@ function TopNavBar() {
           pt={{
             root: {
               className:
-                "flex items-center gap-2 px-3 py-2 no-underline transition-all duration-200",
+                "flex items-center gap-2 !p-0 md:!p-2 no-underline transition-all duration-200 ",
             },
             label: {
               className: "text-red-300 hover:text-red-300",

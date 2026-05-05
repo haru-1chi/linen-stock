@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useCallback } from "react";
+import { Toast } from "primereact/toast";
 import LinenStockSideStack from "./LinenStockSideStack"; // ไฟล์ Card Stack ที่เราแปลงใหม่
 import ManageStock from "./ManageStock";
 
@@ -7,6 +8,11 @@ function LinenMasterDashboard() {
   const [selectedLinen, setSelectedLinen] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const toast = useRef(null);
+
+  const showGlobalToast = useCallback((severity, summary, detail) => {
+    toast.current?.show({ severity, summary, detail, life: 3000 });
+  }, []);
 
   const triggerRefresh = () => setRefreshKey((prev) => prev + 1);
 
@@ -17,6 +23,7 @@ function LinenMasterDashboard() {
 
   return (
     <div className="flex h-full w-full bg-slate-100 overflow-hidden relative">
+      <Toast ref={toast} position="top-right" />
       
       {/* Mobile Overlay พื้นหลังเวลาเปิด Sidebar */}
       {mobileMenuOpen && (
@@ -37,6 +44,7 @@ function LinenMasterDashboard() {
           selectedId={selectedLinen?.id}
           refreshKey={refreshKey}
           onSuccess={triggerRefresh}
+          showGlobalToast={showGlobalToast}
         />
       </div>
 
@@ -48,6 +56,7 @@ function LinenMasterDashboard() {
             onSuccess={triggerRefresh}
             refreshKey={refreshKey}
             onOpenMobileMenu={() => setMobileMenuOpen(true)}
+            showGlobalToast={showGlobalToast}
           />
         </div>
       </div>

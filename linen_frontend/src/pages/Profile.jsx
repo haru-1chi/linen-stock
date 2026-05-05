@@ -239,16 +239,16 @@ function Profile() {
   };
 
   return (
-    <div className="Home-page overflow-hidden min-h-dvh flex flex-col items-center">
+    <div className="Home-page min-h-screen flex flex-col items-center p-4">
       <Toast ref={toast} />
       <ConfirmDialog />
       <div
-        className={`flex-1  transition-all duration-300 p-4 sm:p-8 pt-5 overflow-auto`}
+        className="w-full max-w-2xl mt-4"
       >
         <div className="flex items-center mb-5">
           <h5 className="text-2xl font-semibold">บัญชีของฉัน</h5>
         </div>
-        <div className="card w-125 bg-white p-5 rounded-xl shadow-md">
+        <div className="card w-full max-w-2xl bg-white p-5 rounded-xl shadow-md">
           {user.verify === 0 && (
             <div className="mb-4">
               <Message

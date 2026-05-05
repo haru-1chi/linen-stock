@@ -60,7 +60,7 @@ const formatDateLocal = (date) => {
   return `${y}-${m}-${d}`;
 };
 
-function ManageStock({ externalFilterId, onSuccess, refreshKey, onOpenMobileMenu }) {
+function ManageStock({ externalFilterId, onSuccess, refreshKey, onOpenMobileMenu, showGlobalToast }) {
   const toast = useRef(null);
   const [detailSuggestions, setDetailSuggestions] = useState([]);
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -99,8 +99,12 @@ function ManageStock({ externalFilterId, onSuccess, refreshKey, onOpenMobileMenu
   });
 
   const showToast = useCallback((severity, summary, detail) => {
-    toast.current?.show({ severity, summary, detail, life: 3000 });
-  }, []);
+    if (showGlobalToast) {
+      showGlobalToast(severity, summary, detail);
+    } else {
+      toast.current?.show({ severity, summary, detail, life: 3000 });
+    }
+  }, [showGlobalToast]);
 
   const onPage = (event) => {
     setFirst(event.first);
@@ -537,7 +541,7 @@ function ManageStock({ externalFilterId, onSuccess, refreshKey, onOpenMobileMenu
             <Button
               icon={<FontAwesomeIcon icon={faChevronLeft} />}
               onClick={() => changeMonth(-1)}
-              className="p-button-outlined p-button-secondary"
+              outlined
             />
 
             <Calendar
@@ -553,7 +557,7 @@ function ManageStock({ externalFilterId, onSuccess, refreshKey, onOpenMobileMenu
             <Button
               icon={<FontAwesomeIcon icon={faChevronRight} />}
               onClick={() => changeMonth(1)}
-              className="p-button-outlined p-button-secondary"
+              outlined
             />
           </div>
         </div>
@@ -566,7 +570,7 @@ function ManageStock({ externalFilterId, onSuccess, refreshKey, onOpenMobileMenu
               +{monthlySummary.totalIn.toLocaleString()}
             </p>
           </div>
-          <div className="w-px h-8 bg-indigo-200 hidden sm:block"></div>
+          <div className="w-px h-8 bg-indigo-200 block"></div>
           <div className="text-center flex-1 sm:flex-none">
             <p className="text-xs text-slate-500 uppercase font-bold">
               จ่ายออกเดือนนี้
@@ -575,8 +579,8 @@ function ManageStock({ externalFilterId, onSuccess, refreshKey, onOpenMobileMenu
               -{monthlySummary.totalOut.toLocaleString()}
             </p>
           </div>
-          <div className="w-px h-8 bg-indigo-200 hidden sm:block"></div>
-          <div className="text-center flex-1 sm:flex-none w-full sm:w-auto mt-2 sm:mt-0 border-t border-indigo-200 pt-2 sm:border-none sm:pt-0">
+          <div className="w-px h-8 bg-indigo-200 block"></div>
+          <div className="text-center flex-1 sm:flex-none">
             <p className="text-xs text-indigo-600 uppercase font-bold">
               คงเหลือสิ้นเดือน
             </p>
@@ -771,7 +775,7 @@ function ManageStock({ externalFilterId, onSuccess, refreshKey, onOpenMobileMenu
             <div className="mb-4">
               {header}
             </div>
-            
+
             <div className="flex flex-col gap-3">
               {transactions.map((row) => (
                 <div key={row.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-3">
@@ -784,7 +788,7 @@ function ManageStock({ externalFilterId, onSuccess, refreshKey, onOpenMobileMenu
                       {row.status_type === 'IN' ? 'รับเข้า' : 'จ่ายออก'}
                     </span>
                   </div>
-                  
+
                   <div className="flex justify-between items-start mt-1">
                     <div className="flex-1 pr-2">
                       <p className="text-slate-800 font-bold text-base leading-tight">
@@ -822,11 +826,11 @@ function ManageStock({ externalFilterId, onSuccess, refreshKey, onOpenMobileMenu
 
             {/* Mobile Paginator */}
             {totalRecords > 0 && (
-              <Paginator 
-                first={first} 
-                rows={rows} 
-                totalRecords={totalRecords} 
-                onPageChange={onPage} 
+              <Paginator
+                first={first}
+                rows={rows}
+                totalRecords={totalRecords}
+                onPageChange={onPage}
                 className="mt-4 bg-transparent border-none p-0"
                 template="FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
                 currentPageReportTemplate="{first} - {last} จาก {totalRecords}"

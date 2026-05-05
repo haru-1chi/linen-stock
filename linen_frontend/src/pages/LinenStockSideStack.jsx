@@ -35,7 +35,7 @@ import {
 const API_BASE =
   import.meta.env.VITE_REACT_APP_API || "http://localhost:3000/api";
 
-function LinenStockSideStack({ onSelect, selectedId, refreshKey, onSuccess }) {
+function LinenStockSideStack({ onSelect, selectedId, refreshKey, onSuccess, showGlobalToast }) {
   const toast = useRef(null);
   const token = localStorage.getItem("token");
 
@@ -64,8 +64,12 @@ function LinenStockSideStack({ onSelect, selectedId, refreshKey, onSuccess }) {
   };
 
   const showToast = useCallback((severity, summary, detail) => {
-    toast.current?.show({ severity, summary, detail, life: 3000 });
-  }, []);
+    if (showGlobalToast) {
+      showGlobalToast(severity, summary, detail);
+    } else {
+      toast.current?.show({ severity, summary, detail, life: 3000 });
+    }
+  }, [showGlobalToast]);
 
   const openEditDialog = (e, item) => {
     e.stopPropagation();

@@ -134,6 +134,7 @@ const ManageStockDialog = ({
             mode="currency"
             currency="THB"
             locale="th-TH"
+            min={0}
             className={`w-full ${submitted && (!formData.price || formData.price <= 0) ? "p-invalid" : ""}`}
             inputClassName="w-full"
             value={formData.price}

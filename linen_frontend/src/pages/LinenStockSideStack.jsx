@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import { Toast } from "primereact/toast";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
+import { InputNumber } from "primereact/inputnumber";
 import { Dialog } from "primereact/dialog";
 import { ToggleButton } from "primereact/togglebutton";
 import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
@@ -360,7 +361,7 @@ function LinenStockSideStack({ onSelect, selectedId, refreshKey, onSuccess, show
             to="/linen/stock"
             className="flex items-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors text-sm font-medium"
           >
-            <FontAwesomeIcon icon={faTable} className="text-lg"/>
+            <FontAwesomeIcon icon={faTable} className="text-lg" />
             ดูในรูปแบบตาราง
           </Link>
         </div>
@@ -497,12 +498,12 @@ function LinenStockSideStack({ onSelect, selectedId, refreshKey, onSuccess, show
       <Dialog
         header="แก้ไขข้อมูลผ้า"
         visible={editDialogVisible}
-        style={{ width: "600px" }}
+        style={{ width: "90vw" }}
         maximizable
         modal
         onHide={() => setEditDialogVisible(false)}
         footer={
-          <div className="flex justify-end gap-2 border-t pt-3">
+          <div className="flex justify-end gap-2 pt-3">
             <Button
               label="ยกเลิก"
               className="p-button-text p-button-secondary"
@@ -517,20 +518,13 @@ function LinenStockSideStack({ onSelect, selectedId, refreshKey, onSuccess, show
           </div>
         }
       >
-        <div className="py-2">
-          <div className="mb-4">
-            <p className="text-sm font-bold text-indigo-500 mb-1">
-              {" "}
-              {editingItem?.code}
+        <div className="p-2">
+          <div className="grid grid-cols-1 gap-4">
+            <p className="text-md font-bold text-indigo-500 mt-2">
+              รหัส ED : {editingItem?.code}
             </p>
-            <p className="text-lg font-bold text-slate-700">
-              {editingItem?.linen_name}
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <div>
-              <label className="font-bold text-slate-600">ประเภท</label>
+            <div className="flex flex-col">
+              <label className="font-semibold text-slate-700 mb-1">ประเภทผ้า</label>
               <Dropdown
                 value={editingItem?.linen_type ?? null}
                 options={linenTypeOptions}
@@ -544,8 +538,8 @@ function LinenStockSideStack({ onSelect, selectedId, refreshKey, onSuccess, show
               />
             </div>
 
-            <div>
-              <label className="font-bold text-slate-600">ชื่อผ้า</label>
+            <div className="flex flex-col">
+              <label className="font-semibold text-slate-700 mb-1">ชื่อรายการผ้า</label>
               <InputText
                 value={editingItem?.linen_name || ""}
                 onChange={(e) =>
@@ -555,68 +549,74 @@ function LinenStockSideStack({ onSelect, selectedId, refreshKey, onSuccess, show
               />
             </div>
 
-            <div>
-              <label className="font-bold text-slate-600">หน่วย</label>
-              <InputText
-                value={editingItem?.unit || ""}
-                onChange={(e) =>
-                  setEditingItem({ ...editingItem, unit: e.target.value })
-                }
-                className="w-full"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col">
+                <label className="font-semibold text-slate-700 mb-1">หน่วย</label>
+                <InputText
+                  value={editingItem?.unit || ""}
+                  onChange={(e) =>
+                    setEditingItem({ ...editingItem, unit: e.target.value })
+                  }
+                  className="w-full"
+                />
+              </div>
+
+              <div className="flex flex-col">
+                <label className="font-semibold text-slate-700 mb-1">ราคา(ต่อหน่วย)</label>
+                <InputNumber
+                  value={editingItem?.price || 0}
+                  onValueChange={(e) =>
+                    setEditingItem({
+                      ...editingItem,
+                      price: e.value,
+                    })
+                  }
+                  className="w-full"
+                  inputClassName="w-full"
+                  min={0}
+                  mode="decimal"
+                  minFractionDigits={0}
+                  maxFractionDigits={2}
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="font-bold text-slate-600">
-                จำนวนสั่งเริ่มต้น
-              </label>
-              <InputText
-                value={editingItem?.default_order_quantity || 0}
-                onChange={(e) =>
-                  setEditingItem({
-                    ...editingItem,
-                    default_order_quantity: Number(e.target.value), // แปลงเป็นตัวเลข
-                  })
-                }
-                className="w-full"
-                type="number" // เพิ่มอันนี้เพื่อให้แป้นพิมพ์ขึ้นเป็นตัวเลข
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col">
+                <label className="font-semibold text-slate-700 mb-1">จำนวนสั่งเริ่มต้น</label>
+                <InputNumber
+                  value={editingItem?.default_order_quantity || 0}
+                  onValueChange={(e) =>
+                    setEditingItem({
+                      ...editingItem,
+                      default_order_quantity: e.value,
+                    })
+                  }
+                  className="w-full"
+                  inputClassName="w-full"
+                  min={0}
+                />
+              </div>
+
+              <div className="flex flex-col">
+                <label className="font-semibold text-slate-700 mb-1">จำนวนจ่ายเริ่มต้น</label>
+                <InputNumber
+                  value={editingItem?.default_issue_quantity || 0}
+                  onValueChange={(e) =>
+                    setEditingItem({
+                      ...editingItem,
+                      default_issue_quantity: e.value,
+                    })
+                  }
+                  className="w-full"
+                  inputClassName="w-full"
+                  min={0}
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="font-bold text-slate-600">
-                จำนวนจ่ายเริ่มต้น
-              </label>
-              <InputText
-                value={editingItem?.default_issue_quantity || 0}
-                onChange={(e) =>
-                  setEditingItem({
-                    ...editingItem,
-                    default_issue_quantity: Number(e.target.value),
-                  })
-                }
-                className="w-full"
-                type="number"
-              />
-            </div>
-
-            <div>
-              <label className="font-bold text-slate-600">ราคา</label>
-              <InputText
-                value={editingItem?.price || 0}
-                onChange={(e) =>
-                  setEditingItem({
-                    ...editingItem,
-                    price: Number(e.target.value),
-                  })
-                }
-                className="w-full"
-                type="number"
-              />
-            </div>
-
-            <div>
-              <label className="font-bold text-slate-600">หมายเหตุ</label>
+            <div className="flex flex-col">
+              <label className="font-semibold text-slate-700 mb-1">หมายเหตุ</label>
               <InputText
                 value={editingItem?.note || ""}
                 onChange={(e) =>
@@ -640,7 +640,7 @@ function LinenStockSideStack({ onSelect, selectedId, refreshKey, onSuccess, show
         addRow={addRow}
         removeRow={removeRow}
         dialogFooterTemplate={
-          <div className="flex justify-between border-t pt-4 border-slate-50">
+          <div className="flex justify-between border-t border-slate-50">
             <FileUpload
               ref={fileUploadRef}
               mode="basic"

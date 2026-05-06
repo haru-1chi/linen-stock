@@ -16,6 +16,9 @@ const LinenMasterDashboard = React.lazy(
 );
 const LinenStockPage = React.lazy(() => import("./pages/LinenStockPage"));
 
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons";
+
 function App() {
   return (
     <BrowserRouter>
@@ -23,10 +26,12 @@ function App() {
         <Suspense
           fallback={
             <div className="flex h-screen w-screen items-center justify-center bg-slate-50">
-              <i
-                className="pi pi-spin pi-spinner text-indigo-500"
+              <FontAwesomeIcon
+                icon={faSpinner}
+                spin
+                className="text-indigo-500"
                 style={{ fontSize: "3rem" }}
-              ></i>
+              />
             </div>
           }
         >

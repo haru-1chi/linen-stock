@@ -37,7 +37,9 @@ import {
   faArrowTrendDown,
   faCircleInfo,
   faMinus,
-  faBars,
+  faWarehouse,
+  faCalendar,
+  faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
 import { Toast } from "primereact/toast";
 import Swal from "sweetalert2";
@@ -602,10 +604,10 @@ function ManageStock({ externalFilterId, onSuccess, refreshKey, onOpenMobileMenu
             <div className="md:hidden">
               {onOpenMobileMenu && (
                 <Button
-                  icon={<FontAwesomeIcon icon={faBars} />}
-                  className="p-button-rounded p-button-text p-button-secondary bg-slate-200 hover:bg-slate-300 w-10 h-10 flex-shrink-0"
+                  icon={<FontAwesomeIcon icon={faWarehouse} />}
                   onClick={onOpenMobileMenu}
                   aria-label="เมนู"
+
                 />
               )}
             </div>
@@ -781,7 +783,7 @@ function ManageStock({ externalFilterId, onSuccess, refreshKey, onOpenMobileMenu
                 <div key={row.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-3">
                   <div className="flex justify-between items-center border-b border-slate-100 pb-2">
                     <span className="text-sm text-slate-500 font-medium">
-                      <i className="pi pi-calendar mr-2 text-indigo-400"></i>
+                      <FontAwesomeIcon icon={faCalendar} className="mr-2 text-indigo-400" />
                       {new Intl.DateTimeFormat("th-TH", { timeZone: "Asia/Bangkok", day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(row.created_at))}
                     </span>
                     <span className={`text-xs font-bold px-3 py-1 rounded-full ${row.status_type === 'IN' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-red-50 text-red-500 border border-red-100'}`}>
@@ -840,10 +842,12 @@ function ManageStock({ externalFilterId, onSuccess, refreshKey, onOpenMobileMenu
 
           {loading && (
             <div className="absolute inset-0 flex items-center justify-center bg-white/60 z-10 transition-opacity backdrop-blur-[1px] rounded-2xl">
-              <i
-                className="pi pi-spin pi-spinner text-indigo-600"
+              <FontAwesomeIcon
+                icon={faSpinner}
+                spin
+                className="text-indigo-600"
                 style={{ fontSize: "2.5rem" }}
-              ></i>
+              />
             </div>
           )}
         </div>

@@ -15,18 +15,16 @@ function TopNavBar() {
   return (
     <nav className="h-16 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-6 fixed top-0 left-0 right-0 z-1 shadow-md">
       {/* ฝั่งซ้าย: ชื่อระบบ */}
-      <div className="flex items-center gap-3">
+      <Link to="/linen/dashboard" className="no-underline flex items-center gap-3">
         <div className="bg-indigo-500 w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
           <FontAwesomeIcon icon={faBox} size="lg" />
         </div>
-        <Link to="/linen/dashboard" className="no-underline">
-          <div className="flex flex-col">
-            <h5 className="text-xl font-bold text-white tracking-tighter mb-0 leading-none">
-              ระบบสต๊อคผ้า
-            </h5>
-          </div>
-        </Link>
-      </div>
+        <div className="flex flex-col">
+          <h5 className="text-xl font-bold text-white tracking-tighter mb-0 leading-none">
+            ระบบสต๊อคผ้า
+          </h5>
+        </div>
+      </Link>
 
       {/* ฝั่งขวา: โปรไฟล์และออกจากระบบ */}
       <div className="flex items-center gap-2">

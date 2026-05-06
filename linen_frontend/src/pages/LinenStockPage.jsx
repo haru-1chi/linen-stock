@@ -17,6 +17,7 @@ import {
   faMagnifyingGlass,
   faFileImport,
   faFileExport,
+  faTriangleExclamation,
 } from "@fortawesome/free-solid-svg-icons";
 import { exportStockToExcel } from "../utils/exportStockUtils";
 const API_BASE =
@@ -178,7 +179,7 @@ function LinenStockPage() {
     confirmDialog({
       message: "คุณต้องการบันทึกการแก้ไขนี้ใช่หรือไม่?",
       header: "ยืนยันการบันทึก",
-      icon: "pi pi-exclamation-triangle",
+      icon: <FontAwesomeIcon icon={faTriangleExclamation} className="text-amber-500" />,
       acceptLabel: "บันทึก",
       rejectLabel: "ยกเลิก",
       acceptClassName: "p-button-success",
@@ -258,7 +259,7 @@ function LinenStockPage() {
       confirmDialog({
         message: "ต้องการลบรายการนี้หรือไม่?",
         header: "ยืนยันการลบ",
-        icon: "pi pi-exclamation-triangle",
+        icon: <FontAwesomeIcon icon={faTriangleExclamation} className="text-red-500" />,
         acceptClassName: "p-button-danger",
         accept: () => handleDelete(rowId),
         reject: () => showToast("info", "ยกเลิก", "การลบถูกยกเลิก"),

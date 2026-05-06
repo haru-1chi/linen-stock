@@ -3,6 +3,7 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from "primereact/button";
 import { Dropdown } from "primereact/dropdown";
+import { InputNumber } from "primereact/inputnumber";
 import { InputText } from "primereact/inputtext";
 import { Calendar } from "primereact/calendar";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -48,7 +49,6 @@ export default function StockFormDialog({
       modal
       onHide={() => setDialogVisible(false)}
       footer={dialogFooterTemplate}
-      contentStyle={{ minHeight: "500px" }}
     >
       {/* Desktop View (Multiple Items Table) */}
       <div className="hidden md:block">
@@ -122,13 +122,14 @@ export default function StockFormDialog({
             }
             style={{ width: "130px" }}
             body={(row, opt) => (
-              <InputText
+              <InputNumber
                 value={row.remain}
-                keyfilter="int"
-                onChange={(e) =>
-                  handleInputChange(opt.rowIndex, "remain", e.target.value)
+                min={0}
+                onValueChange={(e) =>
+                  handleInputChange(opt.rowIndex, "remain", e.value)
                 }
-                {...getFieldProps(opt.rowIndex, "remain")}
+                className={getFieldProps(opt.rowIndex, "remain").className}
+                inputClassName="w-full"
               />
             )}
           />
@@ -152,13 +153,17 @@ export default function StockFormDialog({
             header="ราคา(ต่อหน่วย)"
             style={{ width: "120px" }}
             body={(row, opt) => (
-              <InputText
+              <InputNumber
                 value={row.price}
-                keyfilter="money"
-                onChange={(e) =>
-                  handleInputChange(opt.rowIndex, "price", e.target.value)
+                min={0}
+                mode="decimal"
+                minFractionDigits={0}
+                maxFractionDigits={2}
+                onValueChange={(e) =>
+                  handleInputChange(opt.rowIndex, "price", e.value)
                 }
                 className="w-full"
+                inputClassName="w-full"
               />
             )}
           />
@@ -168,17 +173,18 @@ export default function StockFormDialog({
             header="จำนวนสั่งเริ่มต้น"
             style={{ width: "120px" }}
             body={(row, opt) => (
-              <InputText
+              <InputNumber
                 value={row.default_order_quantity}
-                keyfilter="int"
-                onChange={(e) =>
+                min={0}
+                onValueChange={(e) =>
                   handleInputChange(
                     opt.rowIndex,
                     "default_order_quantity",
-                    e.target.value,
+                    e.value,
                   )
                 }
                 className="w-full"
+                inputClassName="w-full"
               />
             )}
           />
@@ -187,17 +193,18 @@ export default function StockFormDialog({
             header="จำนวนจ่ายเริ่มต้น"
             style={{ width: "120px" }}
             body={(row, opt) => (
-              <InputText
+              <InputNumber
                 value={row.default_issue_quantity}
-                keyfilter="int"
-                onChange={(e) =>
+                min={0}
+                onValueChange={(e) =>
                   handleInputChange(
                     opt.rowIndex,
                     "default_issue_quantity",
-                    e.target.value,
+                    e.value,
                   )
                 }
                 className="w-full"
+                inputClassName="w-full"
               />
             )}
           />
@@ -284,13 +291,14 @@ export default function StockFormDialog({
               <label className="font-semibold text-slate-700 mb-1">
                 จำนวนคงเหลือ <span className="text-red-500">*</span>
               </label>
-              <InputText
+              <InputNumber
                 value={rows[0].remain}
-                keyfilter="int"
-                onChange={(e) =>
-                  handleInputChange(0, "remain", e.target.value)
+                min={0}
+                onValueChange={(e) =>
+                  handleInputChange(0, "remain", e.value)
                 }
-                {...getFieldProps(0, "remain")}
+                className={getFieldProps(0, "remain").className}
+                inputClassName="w-full"
               />
             </div>
 
@@ -308,13 +316,17 @@ export default function StockFormDialog({
 
               <div className="flex flex-col">
                 <label className="font-semibold text-slate-700 mb-1">ราคา(ต่อหน่วย)</label>
-                <InputText
+                <InputNumber
                   value={rows[0].price}
-                  keyfilter="money"
-                  onChange={(e) =>
-                    handleInputChange(0, "price", e.target.value)
+                  min={0}
+                  mode="decimal"
+                  minFractionDigits={0}
+                  maxFractionDigits={2}
+                  onValueChange={(e) =>
+                    handleInputChange(0, "price", e.value)
                   }
                   className="w-full"
+                  inputClassName="w-full"
                 />
               </div>
             </div>
@@ -322,25 +334,27 @@ export default function StockFormDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col">
                 <label className="font-semibold text-slate-700 mb-1">จำนวนสั่งเริ่มต้น</label>
-                <InputText
+                <InputNumber
                   value={rows[0].default_order_quantity}
-                  keyfilter="int"
-                  onChange={(e) =>
-                    handleInputChange(0, "default_order_quantity", e.target.value)
+                  min={0}
+                  onValueChange={(e) =>
+                    handleInputChange(0, "default_order_quantity", e.value)
                   }
                   className="w-full"
+                  inputClassName="w-full"
                 />
               </div>
 
               <div className="flex flex-col">
                 <label className="font-semibold text-slate-700 mb-1">จำนวนจ่ายเริ่มต้น</label>
-                <InputText
+                <InputNumber
                   value={rows[0].default_issue_quantity}
-                  keyfilter="int"
-                  onChange={(e) =>
-                    handleInputChange(0, "default_issue_quantity", e.target.value)
+                  min={0}
+                  onValueChange={(e) =>
+                    handleInputChange(0, "default_issue_quantity", e.value)
                   }
                   className="w-full"
+                  inputClassName="w-full"
                 />
               </div>
             </div>

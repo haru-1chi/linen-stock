@@ -460,6 +460,7 @@ exports.updateStock = async (req, res) => {
         const {
             id,
             linen_id,
+            code,
             linen_name,
             unit,
             linen_type,
@@ -524,12 +525,27 @@ exports.updateStock = async (req, res) => {
             });
         }
 
+        // 1.2️⃣ duplicate code check
+        const [dupCode] = await connection.query(
+            `SELECT id FROM linen_items WHERE code = ? AND id != ? AND deleted_at IS NULL LIMIT 1`,
+            [code, linen_id]
+        );
+
+        if (dupCode.length > 0) {
+            await connection.rollback();
+            return res.status(400).json({
+                success: false,
+                message: `รหัส ED "${code}" มีอยู่แล้วในระบบ`,
+            });
+        }
+
         const updatedBy = req.user?.name || "Unknown User";
 
         // 2️⃣ update linen_items
         const updateLinenSQL = `
             UPDATE linen_items
             SET
+                code = ?,
                 linen_name = ?,
                 unit = ?,
                  linen_type = ?,
@@ -541,6 +557,7 @@ exports.updateStock = async (req, res) => {
         `;
 
         await connection.query(updateLinenSQL, [
+            code,
             linen_name,
             unit,
             linen_type,

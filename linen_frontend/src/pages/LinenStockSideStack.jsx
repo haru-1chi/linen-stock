@@ -128,7 +128,7 @@ function LinenStockSideStack({ onSelect, selectedId, refreshKey, onSuccess, show
         {
           id: editingItem.id,
           linen_id: editingItem.linen_id,
-
+          code: editingItem.code,
           linen_name: editingItem.linen_name,
           unit: editingItem.unit,
           linen_type: editingItem.linen_type,
@@ -520,9 +520,16 @@ function LinenStockSideStack({ onSelect, selectedId, refreshKey, onSuccess, show
       >
         <div className="p-2">
           <div className="grid grid-cols-1 gap-4">
-            <p className="text-md font-bold text-indigo-500 mt-2">
-              รหัส ED : {editingItem?.code}
-            </p>
+            <div className="flex flex-col">
+              <label className="font-semibold text-slate-700 mb-1">รหัส ED</label>
+              <InputText
+                value={editingItem?.code || ""}
+                onChange={(e) =>
+                  setEditingItem({ ...editingItem, code: e.target.value })
+                }
+                className="w-full"
+              />
+            </div>
             <div className="flex flex-col">
               <label className="font-semibold text-slate-700 mb-1">ประเภทผ้า</label>
               <Dropdown

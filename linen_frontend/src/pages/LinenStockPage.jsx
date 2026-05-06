@@ -190,6 +190,9 @@ function LinenStockPage() {
           const payload = {
             id: newData.id,
             linen_id: newData.linen_id,
+            code: newData.code,
+            linen_name: newData.linen_name,
+            unit: newData.unit,
             stock_type: newData.stock_type,
             note: newData.note || null,
           };
@@ -224,6 +227,14 @@ function LinenStockPage() {
       onChange={(e) => options.editorCallback(e.target.value)}
       className="w-full"
       autoFocus
+    />
+  );
+
+  const textEditor = (options) => (
+    <InputText
+      value={options.value ?? ""}
+      onChange={(e) => options.editorCallback(e.target.value)}
+      className="w-full"
     />
   );
 
@@ -326,11 +337,11 @@ function LinenStockPage() {
           rowsPerPageOptions={[10, 25, 50]}
           showGridlines
         >
-          <Column field="code" header="รหัส ED" sortable />
-          <Column field="linen_name" header="ชื่อรายการ" sortable />
+          <Column field="code" header="รหัส ED" sortable editor={textEditor} />
+          <Column field="linen_name" header="ชื่อรายการ" sortable editor={textEditor} />
           <Column field="remain" header="คงเหลือ" sortable />
 
-          <Column field="unit" header="หน่วย" />
+          <Column field="unit" header="หน่วย" editor={textEditor} />
 
           <Column field="note" header="หมายเหตุ" editor={noteEditor} />
 

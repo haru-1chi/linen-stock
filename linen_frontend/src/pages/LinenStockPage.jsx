@@ -303,7 +303,7 @@ function LinenStockPage() {
   );
 
   return (
-    <div className="overflow-hidden min-h-dvh flex flex-col justify-between">
+    <div className="h-full flex flex-col justify-between bg-slate-50 overflow-hidden">
       <Toast ref={toast} />
       <ConfirmDialog />
       <div

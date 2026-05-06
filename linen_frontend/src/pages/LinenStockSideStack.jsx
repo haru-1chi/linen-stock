@@ -340,8 +340,8 @@ function LinenStockSideStack({ onSelect, selectedId, refreshKey, onSuccess, show
       const codeA = a.code?.toLowerCase() || "";
       const codeB = b.code?.toLowerCase() || "";
       return sortOrder === "asc"
-        ? codeA.localeCompare(codeB)
-        : codeB.localeCompare(codeA);
+        ? codeA.localeCompare(codeB, undefined, { numeric: true })
+        : codeB.localeCompare(codeA, undefined, { numeric: true });
     });
   }, [filteredStock, sortOrder]);
 
